@@ -122,9 +122,6 @@ export function Search({
           </div>
 
           <div className="mono mt-3 flex gap-3 px-1 text-[10.5px]" style={{ color: 'var(--muted-deep)' }}>
-            <span>↑↓ move</span>
-            <span>↵ open</span>
-            <span>esc close</span>
             <span className="ml-auto">{filtered.length} of {hits.length}</span>
           </div>
         </Dialog.Content>

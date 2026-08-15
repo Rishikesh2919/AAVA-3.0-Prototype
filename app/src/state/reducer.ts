@@ -2,7 +2,7 @@ import type { Action, Arrangement, AppState, Effect, PlaygroundState, Task, Task
 
 export const TASKS: Task[] = [
   {
-    id: 'T1', title: 'Add feedback form after the checkout screen',
+    id: 'T1', title: 'Add product feedback form',
     status: 'clarify', tag: 'review', est: '2 hrs', dep: 'None', recommended: true,
     note: 'Completed development of UI screen.', updated: '8 min ago',
     opening: [

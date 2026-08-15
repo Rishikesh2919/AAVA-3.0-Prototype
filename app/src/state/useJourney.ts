@@ -169,7 +169,6 @@ export function useJourney() {
     cancel()
     if (state.stashed[threadId]) {
       dispatch({ type: 'RESUME_THREAD', threadId })
-      toast('Resumed — memory and evidence came back with the thread.')
       return
     }
     const sc = getScenario(taskId)
@@ -179,7 +178,7 @@ export function useJourney() {
     // AAVA speaks to where the work actually stands, from the task's own copy.
     const task = TASKS.find((t) => t.id === taskId)
     if (task) play([{ type: 'say', lines: task.opening }])
-  }, [state.activeThreadId, state.stashed, play, toast, cancel])
+  }, [state.activeThreadId, state.stashed, play, cancel])
 
   /* One way into a thread, whatever the sidebar shows it as. A parked thread
      comes back whole; a task thread that was never parked (a seeded one, or one
@@ -189,7 +188,6 @@ export function useJourney() {
     if (state.stashed[thread.id]) {
       cancel()
       dispatch({ type: 'RESUME_THREAD', threadId: thread.id })
-      toast('Resumed — memory and evidence came back with the thread.')
       return
     }
     if (thread.taskId) { openTask(thread.taskId); return }
