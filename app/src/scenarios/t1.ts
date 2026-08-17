@@ -143,7 +143,6 @@ export const t1: Scenario = {
       { type: 'say', stream: false,
         lines: ['I have developed the screen as per the requirement! Here is the generated preview on the right.'],
         block: { kind: 'app', name: 'feedback-form', status: 'localhost:4200 · Running' } },
-      { type: 'wait', ms: 400 },
       // The running app is not something to ask for — it is the first thing you
       // should see. No build to sit through: the work was done on the Jira
       // webhook before Deepak sat down, so the preview is already up.
@@ -154,7 +153,7 @@ export const t1: Scenario = {
          two ways in: the files that changed, or the steps that changed them. */
       /* No chips on the opening beat — the question is the invitation to type.
          Chips come back once a branch has been taken. */
-      { type: 'say', lines: [
+      { type: 'say', stream: false, lines: [
         'Would you like to review the code changes or look at the agentic process steps I took?',
       ] },
     ],

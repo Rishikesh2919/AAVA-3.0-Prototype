@@ -92,13 +92,20 @@ export function useJourney() {
 
       if (effect.type === 'say') {
         const at = elapsed
+        /* `stream: false` is work that was already finished before you arrived —
+           prepared work has no think-time and nothing to reveal, so it lands
+           whole, with no typing indicator in front of it. */
+        if (effect.stream === false) {
+          after(at, () => dispatch({ type: 'APPLY', effect }))
+          continue
+        }
         const ttft = effect.block || effect.lines.join(' ').length > 90 ? T.ttftReason : T.ttftFast
 
         after(at, () => dispatch({ type: 'TYPING' }))
         after(at + ttft, () => dispatch({ type: 'APPLY', effect }))
         // Hold the next effect until the text has finished streaming, so beats
         // don't stack on top of a half-revealed sentence.
-        elapsed = at + ttft + (effect.stream === false ? 0 : streamMs(effect.lines.join(' ')))
+        elapsed = at + ttft + streamMs(effect.lines.join(' '))
         continue
       }
 
