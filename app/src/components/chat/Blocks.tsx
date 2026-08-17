@@ -5,15 +5,54 @@ interface Props {
   block: BlockSpec
   live: boolean
   prep: React.ReactNode
+  /** The running app, for the `app` card's thumbnail. Injected the same way
+      `prep` is — the conversation never reaches into the playground itself. */
+  preview: React.ReactNode
   onAccept: (beat: string) => void
   onDismiss: () => void
   onOpenFile?: (file: string) => void
+  onOpenPreview?: () => void
 }
 
-export function Block({ block, live, prep, onAccept, onDismiss, onOpenFile }: Props) {
+export function Block({ block, live, prep, preview, onAccept, onDismiss, onOpenFile, onOpenPreview }: Props) {
   if (block.kind === 'prep') return <>{prep}</>
 
   if (block.kind === 'tools') return <ToolSteps steps={block.steps} done={block.done} />
+
+  /* What was generated: the thing itself on top, named underneath, with the way
+     in beside the name. The thumbnail is the running app rendered small and
+     inert — not a screenshot — so an edit in the workspace shows up here too. */
+  if (block.kind === 'app') {
+    return (
+      /* Capped: a card is an object you can take in at a glance, and stretching
+         it to a 880px reading column turns it into a banner. */
+      <div className="mt-3 w-full max-w-[440px] overflow-hidden rounded-[var(--r-md)]"
+        style={{ background: 'var(--glass)', border: '1px solid var(--glass-line)' }}>
+        {preview && (
+          <div className="relative h-[150px] overflow-hidden" style={{ background: 'var(--preview-bg)' }}>
+            {/* Scaled from the top-left and widened to match, so the miniature
+                fills the card rather than sitting in a third of it. */}
+            <div aria-hidden="true" className="pointer-events-none origin-top-left select-none"
+              style={{ transform: 'scale(.62)', width: '161%' }}>
+              {preview}
+            </div>
+          </div>
+        )}
+        <div className="flex items-center gap-3 px-3.5 py-3"
+          style={{ borderTop: preview ? '1px solid var(--glass-line-soft)' : undefined }}>
+          <div className="grid min-w-0 flex-1 gap-0.5">
+            <span className="truncate text-[13px] font-semibold">{block.name}</span>
+            <span className="mono truncate text-[11px]" style={{ color: 'var(--muted)' }}>{block.status}</span>
+          </div>
+          <button onClick={onOpenPreview}
+            className="press rounded-full px-3.5 py-1.5 text-[12px] font-medium hover:bg-[var(--wash-4)] hover:text-[var(--text-dim)]"
+            style={{ background: 'var(--glass)', color: 'var(--muted)', minHeight: 'var(--hit)', border: '1px solid var(--glass-line-soft)' }}>
+            Open
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (block.kind === 'coverage') {
     return (

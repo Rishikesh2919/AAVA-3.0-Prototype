@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Actions, DockLocation, Layout, Model, TabNode } from 'flexlayout-react'
 import type { Action, IJsonModel } from 'flexlayout-react'
 import type { PlaygroundState, Scenario } from '../../state/types'
@@ -111,14 +112,18 @@ export function TabWorkspace({
   }, [model])
 
   /* The scenario says "show the diff now" in its own vocabulary; this is where
-     that becomes a workspace tab. Guarded on the resolved id so reopening the
-     panel does not re-add a tab the user deliberately closed. */
+     that becomes a workspace tab. Guarded on the resolved id *and* the request
+     counter: incidental re-renders (reopening the panel, say) do not re-add a
+     tab the user deliberately closed, but asking again — an Open button, a file
+     link, the next beat — always does, even for the tab last asked for. */
   useEffect(() => {
     const tab = workspaceTabFor(pg.activeTab, pg, scenario, taskId)
-    if (!tab || lastOpened.current === tab.id) return
-    lastOpened.current = tab.id
+    if (!tab) return
+    const key = `${tab.id}#${pg.openRequest}`
+    if (lastOpened.current === key) return
+    lastOpened.current = key
     openTab(tab)
-  }, [pg.activeTab, pg.activeFile, pg, scenario, taskId, openTab])
+  }, [pg.activeTab, pg.activeFile, pg.openRequest, pg, scenario, taskId, openTab])
 
   /* Selecting a source tab tells the rest of the app which file is in view, so
      the copy button and the preview follow the tab bar. */
@@ -134,12 +139,8 @@ export function TabWorkspace({
 
   return (
     <section aria-label="Task workspace" className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
-      <header className="flex shrink-0 items-center px-3 pb-2 pt-3">
-        <QuickOpen pg={pg} scenario={scenario} taskId={taskId} onOpen={openTab} />
-      </header>
-
       <div
-        className="relative m-[0_12px_12px] min-h-0 flex-1 overflow-hidden rounded-[var(--r-md)]"
+        className="relative m-[12px] min-h-0 flex-1 overflow-hidden rounded-[var(--r-md)]"
         style={{ background: 'var(--slab-raised)', border: '1px solid var(--glass-line-soft)' }}
       >
         <Layout
@@ -157,6 +158,14 @@ export function TabWorkspace({
           )}
           onModelChange={handleModelChange}
           onAction={handleAction}
+          /* Sticky buttons sit immediately after the last tab and travel with the
+             strip — the browser new-tab position, which is where a "+" is looked
+             for. FlexLayout owns that row, so this is the only way in. */
+          onRenderTabSet={(_node, values) => {
+            values.stickyButtons.push(
+              <QuickOpen key="quick-open" pg={pg} scenario={scenario} taskId={taskId} onOpen={openTab} />,
+            )
+          }}
           onTabSetPlaceHolder={() => <WorkspaceEmpty />}
           realtimeResize
         />
@@ -174,8 +183,8 @@ function WorkspaceEmpty() {
           No open artifacts
         </p>
         <p className="mt-1.5 text-[12px] leading-[1.5]" style={{ color: 'var(--muted-deep)' }}>
-          Use <span className="mono">Open</span> above to bring the source, preview,
-          tests or evidence back into the workspace.
+          Use <span className="mono">+</span> in the tab strip to bring the source,
+          preview, tests or evidence back into the workspace.
         </p>
       </div>
     </div>
@@ -193,16 +202,23 @@ function QuickOpen({ pg, scenario, taskId, onOpen }: {
   taskId: string | null
   onOpen: (tab: WorkspaceTab) => void
 }) {
-  const [open, setOpen] = useState(false)
+  const [at, setAt] = useState<{ x: number; y: number } | null>(null)
+  const open = at !== null
   const root = useRef<HTMLDivElement>(null)
-  useDismiss(open, root, useCallback(() => setOpen(false), []))
+  useDismiss(open, root, useCallback(() => setAt(null), []))
 
   const entries = openableTabs(pg, scenario, taskId)
 
   return (
     <div ref={root} className="relative shrink-0">
       <button
-        onClick={() => setOpen((v) => !v)}
+        /* The tab strip clips its children, so the menu is portalled out and
+           positioned from the button's rect rather than anchored to it. */
+        onClick={(e) => {
+          if (open) return setAt(null)
+          const r = e.currentTarget.getBoundingClientRect()
+          setAt({ x: Math.min(r.left, window.innerWidth - 248), y: r.bottom + 6 })
+        }}
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="Open an artifact"
@@ -216,11 +232,15 @@ function QuickOpen({ pg, scenario, taskId, onOpen }: {
         </svg>
       </button>
 
-      {open && (
+      {at && createPortal(
         <div
           role="menu"
-          className="absolute left-0 top-[32px] z-50 w-[240px] overflow-hidden rounded-[10px] p-1 shadow-lg"
-          style={{ background: 'var(--slab-raised)', border: '1px solid var(--glass-line)' }}
+          /* Outside the dismiss root once portalled, so the menu stops its own
+             mousedown reaching the document listener that would close it before
+             the click lands on an item. */
+          onMouseDown={(e) => e.stopPropagation()}
+          className="fixed z-50 w-[240px] overflow-hidden rounded-[10px] p-1 shadow-lg"
+          style={{ left: at.x, top: at.y, background: 'var(--slab-raised)', border: '1px solid var(--glass-line)' }}
         >
           {entries.map(({ tab, locked, hint }) => (
             <button
@@ -228,7 +248,7 @@ function QuickOpen({ pg, scenario, taskId, onOpen }: {
               role="menuitem"
               disabled={locked}
               title={locked ? hint : undefined}
-              onClick={() => { onOpen(tab); setOpen(false) }}
+              onClick={() => { onOpen(tab); setAt(null) }}
               className="press flex w-full items-baseline gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] hover:bg-[var(--glass)] focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:hover:bg-transparent"
               style={{ color: locked ? 'var(--muted-deep)' : 'var(--text-dim)' }}
             >
@@ -242,7 +262,8 @@ function QuickOpen({ pg, scenario, taskId, onOpen }: {
               )}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

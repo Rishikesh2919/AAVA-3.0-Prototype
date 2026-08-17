@@ -212,6 +212,7 @@ const emptyPlayground: PlaygroundState = {
   diffBadge: null,
   contextOpen: false,
   panelOpen: true,
+  openRequest: 0,
 }
 
 export const initialState: AppState = {
@@ -326,6 +327,7 @@ export function applyEffect(state: AppState, effect: Effect): AppState {
             ? pg.enabledTabs
             : [...pg.enabledTabs, effect.tab],
           diffBadge: effect.tab === 'diff' ? null : pg.diffBadge,
+          openRequest: pg.openRequest + 1,
         },
       }
 
@@ -487,7 +489,11 @@ export function reducer(state: AppState, action: Action): AppState {
         playground: {
           ...state.playground,
           activeTab: action.tab,
+          enabledTabs: state.playground.enabledTabs.includes(action.tab)
+            ? state.playground.enabledTabs
+            : [...state.playground.enabledTabs, action.tab],
           diffBadge: action.tab === 'diff' ? null : state.playground.diffBadge,
+          openRequest: state.playground.openRequest + 1,
         },
       }
 

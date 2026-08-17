@@ -1,4 +1,14 @@
 import { useState } from 'react'
+import type { PlaygroundState, Scenario } from '../../state/types'
+
+/* The template the preview is currently running: the user's edit if there is
+   one, the scripted version otherwise. Both the workspace tab and the card in
+   the conversation read it, so they can never drift apart. */
+export function previewTemplate(scenario: Scenario, pg: PlaygroundState): string {
+  const file = scenario.fileOrder.find((f) => f.endsWith('.html')) ?? scenario.fileOrder[0]
+  const scripted = scenario.files[file].versions[pg.fileVersions[file] ?? 0]
+  return (pg.edits[file] ?? scripted).replaceAll('@@', '')
+}
 
 /* What the preview takes from the template. The editor is live, so the running
    app has to answer to the file rather than to a hardcoded variant — edit the

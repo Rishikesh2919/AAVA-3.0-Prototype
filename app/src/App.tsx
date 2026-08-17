@@ -10,6 +10,7 @@ import { StartView } from './components/start/StartView'
 import { ConversationView } from './components/chat/ConversationView'
 import { PrepList } from './components/chat/PrepList'
 import { TabWorkspace } from './components/playground/TabWorkspace'
+import { FeedbackApp, previewTemplate, readTemplate } from './components/playground/FeedbackApp'
 import { TasksView } from './components/tasks/TasksView'
 import { Notifications } from './components/overlays/Notifications'
 import { Search } from './components/overlays/Search'
@@ -53,6 +54,13 @@ export default function App() {
   }, [j.state.overlay, j.state.arrangement, j.state.activeTaskId, j.state.playground.panelOpen])
 
   const prep = j.scenario ? <PrepList steps={j.scenario.prep} onOpenEvidence={j.focusEvidence} /> : null
+
+  /* The generated-app card shows the running app rather than a picture of it.
+     Built here because this is where the scenario and the playground state meet;
+     the card itself only places it. Inert, so it never needs a toast. */
+  const preview = j.scenario
+    ? <FeedbackApp template={readTemplate(previewTemplate(j.scenario, j.state.playground))} onToast={() => {}} />
+    : null
 
   /* An offered new thread replaces the task chips — it is the only thing worth
      answering while the question is parked. */
@@ -157,10 +165,12 @@ export default function App() {
                     state={j.state}
                     chips={chips}
                     prep={prep}
+                    preview={preview}
                     onChip={j.send}
                     onAccept={j.runBeat}
                     onDismiss={j.dismissBlock}
                     onOpenFile={j.openFile}
+                    onOpenPreview={j.openPreview}
                     onToggleContext={j.toggleContext}
                     onTogglePanel={j.togglePanel}
                     composer={composerFor()}

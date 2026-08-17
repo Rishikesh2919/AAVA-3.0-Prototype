@@ -7,13 +7,15 @@ interface Props {
   messages: Msg[]
   chips: Chip[]
   prep: React.ReactNode
+  preview: React.ReactNode
   onChip: (sends: string) => void
   onAccept: (beat: string) => void
   onDismiss: (id: string) => void
   onOpenFile?: (file: string) => void
+  onOpenPreview?: () => void
 }
 
-export function Thread({ messages, chips, prep, onChip, onAccept, onDismiss, onOpenFile }: Props) {
+export function Thread({ messages, chips, prep, preview, onChip, onAccept, onDismiss, onOpenFile, onOpenPreview }: Props) {
   const end = useRef<HTMLDivElement>(null)
   useEffect(() => {
     end.current?.scrollIntoView({
@@ -25,8 +27,8 @@ export function Thread({ messages, chips, prep, onChip, onAccept, onDismiss, onO
   return (
     <div role="log" aria-live="polite" aria-label="Conversation" className="flex flex-col">
       {messages.map((m) => (
-        <Message key={m.id} msg={m} prep={prep} onAccept={onAccept} onDismiss={onDismiss}
-          onOpenFile={onOpenFile} />
+        <Message key={m.id} msg={m} prep={prep} preview={preview} onAccept={onAccept} onDismiss={onDismiss}
+          onOpenFile={onOpenFile} onOpenPreview={onOpenPreview} />
       ))}
       <Chips chips={chips} onPick={onChip} />
       <div ref={end} />

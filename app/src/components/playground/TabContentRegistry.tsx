@@ -1,6 +1,7 @@
 import type { PlaygroundState, Scenario } from '../../state/types'
 import { parseTabId } from '../../state/workspace'
 import { Preview } from './Preview'
+import { previewTemplate } from './FeedbackApp'
 import { Code } from './Code'
 import { Tests } from './Tests'
 import { Diff } from './Diff'
@@ -35,19 +36,13 @@ export function TabContentRegistry({ tabId, scenario, pg, theme, onToast, onFile
         </Padded>
       )
 
-    case 'preview': {
+    case 'preview':
       if (!scenario) return <EmptySurface />
-      /* The preview renders the template as the editor currently has it — the
-         user's edit if there is one, the scripted version otherwise. */
-      const file = scenario.fileOrder.find((f) => f.endsWith('.html')) ?? scenario.fileOrder[0]
-      const scripted = scenario.files[file].versions[pg.fileVersions[file] ?? 0]
-      const template = (pg.edits[file] ?? scripted).replaceAll('@@', '')
       return (
         <Padded>
-          <Preview template={template} onToast={onToast} />
+          <Preview template={previewTemplate(scenario, pg)} onToast={onToast} />
         </Padded>
       )
-    }
 
     case 'tests':
       return scenario ? <Padded><Tests scenario={scenario} /></Padded> : <EmptySurface />

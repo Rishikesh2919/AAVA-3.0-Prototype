@@ -65,6 +65,9 @@ export type BlockSpec =
       Without one the link is a flat reference (a raised PR, say). */
   | { kind: 'links'; links: { label: string; file?: string }[] }
   | { kind: 'tools'; steps: ToolStep[]; done: number }
+  /** The thing that was just generated, with a way in. Open puts the preview
+      tab in front — the same artefact the workspace already renders. */
+  | { kind: 'app'; name: string; status: string }
 
 export interface Message {
   id: string
@@ -183,6 +186,11 @@ export interface PlaygroundState {
   contextOpen: boolean
   /** Artefact panel. Collapses to a spine rather than disappearing. */
   panelOpen: boolean
+  /** Bumped every time something explicitly asks for a tab — a beat, a link, the
+   *  Open button. The workspace opens on the change, so asking twice for the same
+   *  tab works even after the user closed it. Incidental re-renders do not bump,
+   *  which is what keeps a closed tab closed. */
+  openRequest: number
 }
 
 /** Everything that makes a thread itself, parked while you work in another one. */

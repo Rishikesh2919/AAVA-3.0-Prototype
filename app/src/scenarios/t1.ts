@@ -139,7 +139,8 @@ export const t1: Scenario = {
       // Deepak sat down. Prepared work is instant, new work costs real time — that
       // contrast is the whole "Work Finds You" argument, made physical.
       { type: 'say', stream: false,
-        lines: ['I have developed the screen as per the requirement! Here is the generated preview on the right.'] },
+        lines: ['I have developed the screen as per the requirement! Here is the generated preview on the right.'],
+        block: { kind: 'app', name: 'feedback-form', status: 'localhost:4200 · Running' } },
       { type: 'wait', ms: 400 },
       // The running app is not something to ask for — it is the first thing you
       // should see. No build to sit through: the work was done on the Jira

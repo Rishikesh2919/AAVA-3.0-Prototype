@@ -27,6 +27,19 @@ describe('reducer', () => {
     expect(s.playground.activeTab).toBe(initialState.playground.activeTab)
   })
 
+  /* Asking for the tab that is already active still has to count as a request —
+     otherwise the Open button does nothing once the user closes that tab. */
+  it('counts every explicit tab request, repeats included', () => {
+    const before = initialState.playground.openRequest
+    let s = reducer(initialState, { type: 'SET_TAB', tab: 'preview' })
+    expect(s.playground.openRequest).toBe(before + 1)
+    s = reducer(s, { type: 'SET_TAB', tab: 'preview' })
+    expect(s.playground.openRequest).toBe(before + 2)
+    // Editing is not a tab request.
+    s = reducer(s, { type: 'EDIT_FILE', file: 'a.ts', text: 'x' })
+    expect(s.playground.openRequest).toBe(before + 2)
+  })
+
   it('gives a task opened over a running one its own thread', () => {
     let s = reducer(initialState, { type: 'OPEN_TASK', taskId: 'T1', scenario: null })
     s = applyEffects(s, [{ type: 'say', lines: ['Analyzed the task.'] }])

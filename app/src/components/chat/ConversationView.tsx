@@ -9,10 +9,12 @@ interface Props {
   state: AppState
   chips: Chip[]
   prep: React.ReactNode
+  preview: React.ReactNode
   onChip: (sends: string) => void
   onAccept: (beat: string) => void
   onDismiss: (id: string) => void
   onOpenFile?: (file: string) => void
+  onOpenPreview?: () => void
   onToggleContext?: () => void
   onTogglePanel?: () => void
   composer: React.ReactNode
@@ -27,7 +29,7 @@ interface Props {
  * region of the shell now, so the twin had nothing left to do.
  */
 export function ConversationView({
-  state, chips, prep, onChip, onAccept, onDismiss, onOpenFile, composer, onToggleContext, onTogglePanel,
+  state, chips, prep, preview, onChip, onAccept, onDismiss, onOpenFile, onOpenPreview, composer, onToggleContext, onTogglePanel,
 }: Props) {
   const task = state.activeTaskId ? state.tasks.find((t) => t.id === state.activeTaskId) : null
   const contextOpen = state.playground.contextOpen
@@ -78,8 +80,9 @@ export function ConversationView({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-8 pt-3">
           <div className="mx-auto w-full" style={colStyle}>
-            <Thread messages={state.messages} chips={chips} prep={prep}
-              onChip={onChip} onAccept={onAccept} onDismiss={onDismiss} onOpenFile={onOpenFile} />
+            <Thread messages={state.messages} chips={chips} prep={prep} preview={preview}
+              onChip={onChip} onAccept={onAccept} onDismiss={onDismiss} onOpenFile={onOpenFile}
+              onOpenPreview={onOpenPreview} />
           </div>
         </div>
 
