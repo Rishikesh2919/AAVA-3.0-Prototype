@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { IconBell } from './components/chrome/icons'
+import { IconBell, IconMoon, IconSun } from './components/chrome/icons'
 import { AnimatePresence } from 'motion/react'
 import { AmbientField } from './components/ambient/AmbientField'
 import { Sidebar } from './components/chrome/Sidebar'
@@ -16,6 +16,11 @@ import { Search } from './components/overlays/Search'
 import { Toast } from './components/overlays/Toast'
 import { useJourney } from './state/useJourney'
 import { useTheme } from './state/useTheme'
+
+/* The two chips in the corner are the same object twice — one shape, one hit
+   size — so they read as a pair rather than as two unrelated buttons. */
+const CORNER_BTN = 'press relative grid h-[34px] w-[34px] place-items-center rounded-[9px] transition-colors hover:bg-[var(--wash-4)] focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]'
+const CORNER_STYLE = { color: 'var(--muted)', background: 'var(--glass)', border: '1px solid var(--glass-line)' }
 
 export default function App() {
   const j = useJourney()
@@ -102,26 +107,39 @@ export default function App() {
           }
           main={
             <main className="relative min-h-0 flex-1 overflow-y-auto">
-              {/* Notification bell — the home screen only. Inside a task the
-                  top-right corner belongs to the workspace, and an inbox is a
-                  standing invitation to leave the thing you just opened. */}
+              {/* Theme switch and notification bell — the home screen only.
+                  Inside a task the top-right corner belongs to the workspace,
+                  and an inbox is a standing invitation to leave the thing you
+                  just opened. The account menu keeps its own theme entry for
+                  the screens this corner does not appear on. */}
               {j.state.arrangement === 'start' && (
-                <button
-                  type="button"
-                  aria-label="Notifications"
-                  onClick={() => j.setOverlay(j.state.overlay === 'notifications' ? 'none' : 'notifications')}
-                  className="press absolute right-4 top-4 z-[60] grid h-[34px] w-[34px] place-items-center rounded-[9px] transition-colors hover:bg-[var(--wash-4)] focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
-                  style={{ color: 'var(--muted)', background: 'var(--glass)', border: '1px solid var(--glass-line)' }}
-                >
-                  <IconBell size={15} />
-                  {!!j.unreadCount && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute right-[6px] top-[6px] h-[6px] w-[6px] rounded-full"
-                      style={{ background: 'var(--danger)', boxShadow: '0 0 0 2px var(--slab)' }}
-                    />
-                  )}
-                </button>
+                <div className="absolute right-4 top-4 z-[60] flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                    onClick={toggleTheme}
+                    className={CORNER_BTN}
+                    style={CORNER_STYLE}
+                  >
+                    {theme === 'dark' ? <IconSun size={15} /> : <IconMoon size={15} />}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Notifications"
+                    onClick={() => j.setOverlay(j.state.overlay === 'notifications' ? 'none' : 'notifications')}
+                    className={CORNER_BTN}
+                    style={CORNER_STYLE}
+                  >
+                    <IconBell size={15} />
+                    {!!j.unreadCount && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute right-[6px] top-[6px] h-[6px] w-[6px] rounded-full"
+                        style={{ background: 'var(--danger)', boxShadow: '0 0 0 2px var(--slab)' }}
+                      />
+                    )}
+                  </button>
+                </div>
               )}
 
               <AnimatePresence mode="wait">
