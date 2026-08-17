@@ -22,11 +22,11 @@ describe('t1 scenario', () => {
     expect(routeBeat(t1, 'Show me the diff')).toBe('diff')
   })
 
-  /* "Show intermediate steps" contains "show", which the preview rule matches —
+  /* "Show agentic process steps" contains "show", which the preview rule matches —
      so this is really a test of router ORDER, and it fails the day someone
      appends the new rules to the bottom of the list. */
   it('routes the two review paths without the preview rule stealing them', () => {
-    expect(routeBeat(t1, 'Show intermediate steps')).toBe('steps')
+    expect(routeBeat(t1, 'Show agentic process steps')).toBe('steps')
     expect(routeBeat(t1, 'Review the code changes')).toBe('files')
     expect(routeBeat(t1, 'run it')).toBe('run')
   })

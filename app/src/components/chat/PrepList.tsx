@@ -16,7 +16,7 @@ export function PrepList({ steps, onOpenEvidence }: {
       <Collapsible.Trigger className="flex w-full items-center gap-3 px-3.5 py-[11px] text-left transition-colors hover:bg-[var(--wash-3)]"
         style={{ minHeight: 'var(--hit)' }}>
         <span className="flex-1 text-[12.5px]" style={{ color: 'var(--text-dim)' }}>
-          Sequence of steps
+          Sequence of agentic process steps
         </span>
         <span className="mono shrink-0 text-[11px]" style={{ color: 'var(--muted-deep)' }}>
           {done} of {steps.length} done

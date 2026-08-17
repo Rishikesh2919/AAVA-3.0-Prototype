@@ -153,7 +153,7 @@ export const t1: Scenario = {
          does. What it cannot show is the work behind it, so the offer is the
          two ways in: the files that changed, or the steps that changed them. */
       { type: 'say', lines: [
-        'Would you like to review the code changes or look at the intermediate steps I took?',
+        'Would you like to review the code changes or look at the agentic process steps I took?',
       ] },
       { type: 'chips', stage: 'developed' },
     ],
@@ -257,9 +257,9 @@ export const t1: Scenario = {
   },
 
   router: [
-    /* These two come first: "Show intermediate steps" contains "show", which the
-       preview rule below would otherwise swallow. */
-    { match: /(intermediate|steps I took|sequence of steps)/i,     beat: 'steps' },
+    /* These two come first: "Show agentic process steps" contains "show", which
+       the preview rule below would otherwise swallow. */
+    { match: /(agentic|process steps|steps I took|sequence of steps)/i, beat: 'steps' },
     { match: /(review the code|code change|changed files|the files)/i, beat: 'files' },
     { match: /\b(pr|prs|raise|ship|merge|approve|push)\b/i, beat: 'ship' },
     { match: /\bdiff\b/i,                                   beat: 'diff' },
@@ -270,11 +270,11 @@ export const t1: Scenario = {
   chips: {
     developed: [
       { label: 'Review code changes', sends: 'Review the code changes' },
-      { label: 'Show intermediate steps', sends: 'Show intermediate steps' },
+      { label: 'Show agentic process steps', sends: 'Show agentic process steps' },
     ],
     // Each branch still offers the other, so neither is a dead end.
     filed: [
-      { label: 'Show intermediate steps', sends: 'Show intermediate steps' },
+      { label: 'Show agentic process steps', sends: 'Show agentic process steps' },
       { label: 'Raise the PRs', sends: 'Raise the PRs' },
     ],
     stepped: [
