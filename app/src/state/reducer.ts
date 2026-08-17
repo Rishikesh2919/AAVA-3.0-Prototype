@@ -362,14 +362,6 @@ export function applyEffect(state: AppState, effect: Effect): AppState {
       }
     }
 
-    case 'taskStatus':
-      return {
-        ...state,
-        tasks: state.tasks.map((t) =>
-          t.id === effect.taskId ? { ...t, status: effect.status } : t,
-        ),
-      }
-
     case 'chips':
       return { ...state, chipStage: effect.stage }
   }
@@ -454,9 +446,9 @@ export function reducer(state: AppState, action: Action): AppState {
         stashed: state.activeThreadId && state.activeThreadId !== threadId
           ? { ...state.stashed, [state.activeThreadId]: snapshot(state) }
           : state.stashed,
-        tasks: state.tasks.map((t) =>
-          t.id === task.id && t.status !== 'done' ? { ...t, status: 'wip' } : t,
-        ),
+        /* The board is a fixed picture of the work, not a live one. Opening a
+           task used to move its card into "Working", which meant the columns
+           rearranged under whoever was looking at them. */
         threads: [
           { id: threadId, kind: 'task', taskId: task.id,
             title: task.title, when: 'Just now' },

@@ -91,7 +91,6 @@ export type Effect =
   | { type: 'enableTab'; tab: TabId; badge?: number }
   | { type: 'runState'; kind: RunKind; label: string }
   | { type: 'codeVersion'; file: string; version: number }
-  | { type: 'taskStatus'; taskId: string; status: TaskStatus }
   | { type: 'chips'; stage: string }
   | { type: 'wait'; ms: number }
 

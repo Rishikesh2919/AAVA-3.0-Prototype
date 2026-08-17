@@ -151,11 +151,10 @@ export const t1: Scenario = {
       /* The preview is right there — describing it is what the panel already
          does. What it cannot show is the work behind it, so the offer is the
          two ways in: the files that changed, or the steps that changed them. */
-      /* No chips on the opening beat — the question is the invitation to type.
-         Chips come back once a branch has been taken. */
       { type: 'say', stream: false, lines: [
         'Would you like to review the code changes or look at the agentic process steps I took?',
       ] },
+      { type: 'chips', stage: 'developed' },
     ],
 
     /* The files are the answer, not a summary of them — each one opens in the
@@ -248,7 +247,6 @@ export const t1: Scenario = {
         { label: 'Linking both to MOB-2841',                    source: 'Jira',   result: 'In Review', ms: T.jira },
       ] },
       { type: 'runState', kind: 'shipped', label: 'In review' },
-      { type: 'taskStatus', taskId: 'T1', status: 'done' },
       { type: 'say', lines: ["Both PRs raised."], block: { kind: 'links', links: [
         { label: 'PLAY → PR #218' },
         { label: 'Product → PR #1043' },
@@ -268,6 +266,10 @@ export const t1: Scenario = {
   ],
 
   chips: {
+    developed: [
+      { label: 'Review code changes', sends: 'Review the code changes' },
+      { label: 'Show agentic process steps', sends: 'Show agentic process steps' },
+    ],
     // Each branch still offers the other, so neither is a dead end.
     filed: [
       { label: 'Show agentic process steps', sends: 'Show agentic process steps' },
