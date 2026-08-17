@@ -162,6 +162,9 @@ export interface Scenario {
   evidence: Record<string, EvidenceBlock>
   files: Record<string, { versions: string[] }>
   fileOrder: string[]
+  /** Where the changed files live in the repo, for the editor's file tree.
+      Slash-separated; each segment renders as a folder above the files. */
+  fileRoot?: string
   tests: { specs: string[]; coveragePct: number; gatePct: number }
   diff: DiffGroup[]
   beats: Record<string, Effect[]>

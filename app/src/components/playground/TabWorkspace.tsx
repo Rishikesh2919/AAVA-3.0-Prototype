@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Actions, DockLocation, Layout, Model, TabNode } from 'flexlayout-react'
-import type { Action, IJsonModel } from 'flexlayout-react'
+import type { IJsonModel } from 'flexlayout-react'
 import type { PlaygroundState, Scenario } from '../../state/types'
 import { openableTabs, saveTaskLayout, taskLayout, workspaceTabFor, type WorkspaceTab } from '../../state/workspace'
 import { useDismiss } from '../../state/useDismiss'
@@ -117,23 +117,12 @@ export function TabWorkspace({
      tab the user deliberately closed, but asking again — an Open button, a file
      link, the next beat — always does, even for the tab last asked for. */
   useEffect(() => {
-    const tab = workspaceTabFor(pg.activeTab, pg, scenario, taskId)
-    if (!tab) return
+    const tab = workspaceTabFor(pg.activeTab, taskId)
     const key = `${tab.id}#${pg.openRequest}`
     if (lastOpened.current === key) return
     lastOpened.current = key
     openTab(tab)
-  }, [pg.activeTab, pg.activeFile, pg.openRequest, pg, scenario, taskId, openTab])
-
-  /* Selecting a source tab tells the rest of the app which file is in view, so
-     the copy button and the preview follow the tab bar. */
-  const handleAction = useCallback((action: Action) => {
-    if (action.type === Actions.SELECT_TAB) {
-      const id = String(action.data?.tabNode ?? '')
-      if (id.startsWith('file:')) onFile(id.slice('file:'.length))
-    }
-    return action
-  }, [onFile])
+  }, [pg.activeTab, pg.openRequest, taskId, openTab])
 
   useWorkspaceShortcuts(model, active)
 
@@ -157,13 +146,12 @@ export function TabWorkspace({
             />
           )}
           onModelChange={handleModelChange}
-          onAction={handleAction}
           /* Sticky buttons sit immediately after the last tab and travel with the
              strip — the browser new-tab position, which is where a "+" is looked
              for. FlexLayout owns that row, so this is the only way in. */
           onRenderTabSet={(_node, values) => {
             values.stickyButtons.push(
-              <QuickOpen key="quick-open" pg={pg} scenario={scenario} taskId={taskId} onOpen={openTab} />,
+              <QuickOpen key="quick-open" pg={pg} taskId={taskId} onOpen={openTab} />,
             )
           }}
           onTabSetPlaceHolder={() => <WorkspaceEmpty />}
@@ -196,9 +184,8 @@ function WorkspaceEmpty() {
    menu instead. It opens things; the tab strip below navigates them. Locked
    entries stay listed, because knowing the diff exists and why it is not ready
    beats it silently missing. */
-function QuickOpen({ pg, scenario, taskId, onOpen }: {
+function QuickOpen({ pg, taskId, onOpen }: {
   pg: PlaygroundState
-  scenario: Scenario | null
   taskId: string | null
   onOpen: (tab: WorkspaceTab) => void
 }) {
@@ -207,7 +194,7 @@ function QuickOpen({ pg, scenario, taskId, onOpen }: {
   const root = useRef<HTMLDivElement>(null)
   useDismiss(open, root, useCallback(() => setAt(null), []))
 
-  const entries = openableTabs(pg, scenario, taskId)
+  const entries = openableTabs(pg, taskId)
 
   return (
     <div ref={root} className="relative shrink-0">
@@ -252,9 +239,7 @@ function QuickOpen({ pg, scenario, taskId, onOpen }: {
               className="press flex w-full items-baseline gap-2 rounded-[7px] px-2 py-1.5 text-left text-[12px] hover:bg-[var(--glass)] focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] disabled:cursor-not-allowed disabled:hover:bg-transparent"
               style={{ color: locked ? 'var(--muted-deep)' : 'var(--text-dim)' }}
             >
-              <span className={tab.type === 'file' ? 'mono truncate text-[11.5px]' : 'truncate'}>
-                {tab.label}
-              </span>
+              <span className="truncate">{tab.label}</span>
               {locked && (
                 <span className="ml-auto shrink-0 text-[10px]" style={{ color: 'var(--muted-deep)' }}>
                   Locked

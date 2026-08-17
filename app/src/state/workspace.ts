@@ -7,18 +7,18 @@
  * to the scenario.
  */
 import type { IJsonModel } from 'flexlayout-react'
-import type { PlaygroundState, Scenario, TabId } from './types'
+import type { PlaygroundState, TabId } from './types'
 
 /* ── Tab identity ───────────────────────────────────────────────────────────
  *
  * `${type}:${resourceId}`. The type picks the renderer, the resource says which
- * one of that kind — so two source files are two tabs, but asking for the same
- * file twice lands on the tab that is already open. Identity IS the dedup: the
+ * one of that kind — so two tasks' previews are two tabs, but asking for the
+ * same one twice lands on the tab already open. Identity IS the dedup: the
  * FlexLayout model is keyed by it, so `getNodeById` answers "is this already
  * open?" without a second registry to keep in sync.
  */
 export type WorkspaceTabType =
-  | 'file'
+  | 'code'
   | 'preview'
   | 'tests'
   | 'diff'
@@ -48,24 +48,13 @@ export function parseTabId(id: string): { type: WorkspaceTabType; resourceId: st
 /* The scenario layer still speaks in `TabId` ('code', 'preview', …) because the
    beats are written in it and rewriting the scripts would be churn for nothing.
    This is the seam: one legacy id plus the current playground state resolves to
-   exactly one workspace tab. `code` is the interesting case — it resolves to
-   whichever FILE is active, which is what makes per-file tabs possible without
-   the scenarios knowing anything about them. */
-export function workspaceTabFor(
-  tab: TabId,
-  pg: PlaygroundState,
-  scenario: Scenario | null,
-  taskId: string | null,
-): WorkspaceTab | null {
+   exactly one workspace tab.
+   Source is ONE tab, not one per file: the editor carries its own file tree, so
+   a second file switcher in the tab bar would be the same navigation twice. */
+export function workspaceTabFor(tab: TabId, taskId: string | null): WorkspaceTab {
   const task = taskId ?? 'task'
-
-  if (tab === 'code') {
-    const file = pg.activeFile ?? scenario?.fileOrder[0]
-    if (!file) return null
-    return { id: makeTabId('file', file), type: 'file', resourceId: file, label: file }
-  }
-
-  const label: Record<Exclude<TabId, 'code'>, string> = {
+  const label: Record<TabId, string> = {
+    code: 'Code',
     preview: 'Preview',
     tests: 'Unit tests',
     diff: 'Working diff',
@@ -77,26 +66,17 @@ export function workspaceTabFor(
 /** Every artefact the quick-open menu can offer, in tab-bar order. */
 export function openableTabs(
   pg: PlaygroundState,
-  scenario: Scenario | null,
   taskId: string | null,
 ): { tab: WorkspaceTab; legacy: TabId; locked: boolean; hint?: string }[] {
   const out: { tab: WorkspaceTab; legacy: TabId; locked: boolean; hint?: string }[] = []
 
   const push = (legacy: TabId, hint?: string) => {
-    const tab = workspaceTabFor(legacy, pg, scenario, taskId)
-    if (tab) out.push({ tab, legacy, locked: !pg.enabledTabs.includes(legacy), hint })
+    const tab = workspaceTabFor(legacy, taskId)
+    out.push({ tab, legacy, locked: !pg.enabledTabs.includes(legacy), hint })
   }
 
   push('preview')
-  /* Every file in the scenario is separately openable — that is the whole point
-     of file-scoped identity, and it is what makes the tab bar the real one. */
-  for (const file of scenario?.fileOrder ?? []) {
-    out.push({
-      tab: { id: makeTabId('file', file), type: 'file', resourceId: file, label: file },
-      legacy: 'code',
-      locked: !pg.enabledTabs.includes('code'),
-    })
-  }
+  push('code')
   push('tests')
   push('diff')
   push('evidence')

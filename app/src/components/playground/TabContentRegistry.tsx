@@ -25,14 +25,14 @@ interface Props {
 }
 
 export function TabContentRegistry({ tabId, scenario, pg, theme, onToast, onFile, onEdit }: Props) {
-  const { type, resourceId } = parseTabId(tabId)
+  const { type } = parseTabId(tabId)
 
   switch (type) {
-    case 'file':
-      if (!scenario || !scenario.files[resourceId]) return <EmptySurface />
+    case 'code':
+      if (!scenario) return <EmptySurface />
       return (
         <Padded>
-          <Code scenario={scenario} pg={pg} theme={theme} onFile={onFile} onEdit={onEdit} file={resourceId} />
+          <Code scenario={scenario} pg={pg} theme={theme} onFile={onFile} onEdit={onEdit} />
         </Padded>
       )
 

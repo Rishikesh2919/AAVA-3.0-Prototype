@@ -101,6 +101,8 @@ export const t1: Scenario = {
   },
 
   fileOrder: ['feedback-form.component.html', 'feedback-form.component.ts', 'feedback.service.ts'],
+  /* The path the prep step reported finding — the tree shows the same place. */
+  fileRoot: 'src/app/feedback',
   files: {
     'feedback-form.component.html': { versions: [formHtml] },
     'feedback-form.component.ts': { versions: [componentTs] },

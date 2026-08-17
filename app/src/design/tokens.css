@@ -18,6 +18,11 @@
 }
 
 :root {
+  /* Dark is the product's look, whatever the OS is set to. Declared in CSS
+     rather than only from JS so scrollbars, native controls and the first
+     painted frame are dark too; the light theme below opts back out. */
+  color-scheme: dark;
+
   /* -- 01 Primary Brand — Deep Indigo ---------------------------------- */
   --brand: #6366F1;          /* brand.primary  — CTAs, active nav, key links   */
   --brand-hover: #818CF8;    /* brand.hover                                    */
@@ -142,6 +147,8 @@
    the ambient bloom.
    ========================================================================== */
 :root[data-theme='light'] {
+  color-scheme: light;
+
   --brand: #4F46E5;          /* light brand.primary — 6.29:1 on white, AA */
   --brand-hover: #6366F1;
   --brand-pressed: #3730A3;

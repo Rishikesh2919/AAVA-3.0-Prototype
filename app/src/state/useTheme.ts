@@ -16,9 +16,8 @@ export function useTheme() {
   const [theme, setTheme] = useState<Theme>(initial)
 
   useEffect(() => {
+    // `color-scheme` rides along in tokens.css, keyed off the same attribute.
     document.documentElement.dataset.theme = theme
-    // Keeps form controls, scrollbars and the caret in step with the palette.
-    document.documentElement.style.colorScheme = theme
     window.localStorage.setItem(KEY, theme)
   }, [theme])
 
