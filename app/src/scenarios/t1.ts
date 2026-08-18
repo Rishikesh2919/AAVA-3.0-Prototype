@@ -152,7 +152,7 @@ export const t1: Scenario = {
          does. What it cannot show is the work behind it, so the offer is the
          two ways in: the files that changed, or the steps that changed them. */
       { type: 'say', stream: false, lines: [
-        'Would you like to review the code changes or look at the agentic process steps I took?',
+        'Would you like to review the code changes?',
       ] },
       { type: 'chips', stage: 'developed' },
     ],
@@ -268,7 +268,6 @@ export const t1: Scenario = {
   chips: {
     developed: [
       { label: 'Review code changes', sends: 'Review the code changes' },
-      { label: 'Show agentic process steps', sends: 'Show agentic process steps' },
     ],
     // Each branch still offers the other, so neither is a dead end.
     filed: [
