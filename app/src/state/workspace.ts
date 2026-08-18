@@ -7,7 +7,7 @@
  * to the scenario.
  */
 import type { IJsonModel } from 'flexlayout-react'
-import type { PlaygroundState, TabId } from './types'
+import type { PlaygroundState, Scenario, TabId } from './types'
 
 /* ── Tab identity ───────────────────────────────────────────────────────────
  *
@@ -56,17 +56,24 @@ export function workspaceTabFor(tab: TabId, taskId: string | null): WorkspaceTab
   const label: Record<TabId, string> = {
     code: 'Code',
     preview: 'Preview',
-    tests: 'Unit tests',
+    tests: 'Validation Agent results',
     diff: 'Working diff',
     evidence: 'Evidence',
   }
   return { id: makeTabId(tab, task), type: tab, resourceId: task, label: label[tab] }
 }
 
+/* A preview needs a page to render. A backend migration parked at a review gate
+   has none — so the tab is not locked for it, it does not exist for it. */
+export function hasPreview(scenario: Scenario | null | undefined): boolean {
+  return !!scenario?.fileOrder.some((f) => f.endsWith('.html'))
+}
+
 /** Every artefact the quick-open menu can offer, in tab-bar order. */
 export function openableTabs(
   pg: PlaygroundState,
   taskId: string | null,
+  scenario: Scenario | null,
 ): { tab: WorkspaceTab; legacy: TabId; locked: boolean; hint?: string }[] {
   const out: { tab: WorkspaceTab; legacy: TabId; locked: boolean; hint?: string }[] = []
 
@@ -75,7 +82,7 @@ export function openableTabs(
     out.push({ tab, legacy, locked: !pg.enabledTabs.includes(legacy), hint })
   }
 
-  push('preview')
+  if (hasPreview(scenario)) push('preview')
   push('code')
   push('tests')
   push('diff')

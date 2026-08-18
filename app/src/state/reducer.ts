@@ -1,4 +1,5 @@
 import type { Action, Arrangement, AppState, Effect, PlaygroundState, PrepStep, Task, TaskTag, Thread, ThreadSnapshot } from './types'
+import { hasPreview } from './workspace'
 
 /** Where a scenario's run stands when you open it: its first unfinished step,
  *  or past the end when there is nothing left to do. */
@@ -525,6 +526,9 @@ export function reducer(state: AppState, action: Action): AppState {
         playground: {
           ...emptyPlayground,
           taskId: task.id,
+          /* Opening onto a preview a backend task has no page for is a tab
+             saying "nothing to show here" before anything has run. */
+          activeTab: hasPreview(action.scenario) ? 'preview' : 'tests',
           activeFile: action.scenario?.fileOrder[0] ?? null,
           prepAt: action.scenario ? prepStart(action.scenario.prep) : 0,
         },
@@ -543,6 +547,9 @@ export function reducer(state: AppState, action: Action): AppState {
         playground: {
           ...state.playground,
           activeTab: action.tab,
+          /* An explicit tab request shows it — the panel folds itself away when
+             the last tab is closed, so asking for one has to bring it back. */
+          panelOpen: true,
           enabledTabs: state.playground.enabledTabs.includes(action.tab)
             ? state.playground.enabledTabs
             : [...state.playground.enabledTabs, action.tab],
@@ -566,10 +573,20 @@ export function reducer(state: AppState, action: Action): AppState {
         },
       }
 
+    /* Bumps openRequest like SET_TAB does: the workspace dedups on
+       `${tabId}#${openRequest}`, so without it a second step click while
+       activeTab is already 'evidence' is a no-op — and the tab stays shut
+       after the user closes it. */
     case 'FOCUS_EVIDENCE':
       return {
         ...state,
-        playground: { ...state.playground, activeTab: 'evidence', focusedEvidence: action.key },
+        playground: {
+          ...state.playground,
+          activeTab: 'evidence',
+          focusedEvidence: action.key,
+          panelOpen: true,
+          openRequest: state.playground.openRequest + 1,
+        },
       }
 
     case 'DISMISS_BLOCK':

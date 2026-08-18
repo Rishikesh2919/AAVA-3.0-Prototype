@@ -151,7 +151,7 @@ export function TabWorkspace({
              for. FlexLayout owns that row, so this is the only way in. */
           onRenderTabSet={(_node, values) => {
             values.stickyButtons.push(
-              <QuickOpen key="quick-open" pg={pg} taskId={taskId} onOpen={openTab} />,
+              <QuickOpen key="quick-open" pg={pg} taskId={taskId} scenario={scenario} onOpen={openTab} />,
             )
           }}
           onTabSetPlaceHolder={() => <WorkspaceEmpty />}
@@ -171,8 +171,8 @@ function WorkspaceEmpty() {
           No open artifacts
         </p>
         <p className="mt-1.5 text-[12px] leading-[1.5]" style={{ color: 'var(--muted-deep)' }}>
-          Use <span className="mono">+</span> in the tab strip to bring the source,
-          preview, tests or evidence back into the workspace.
+          Use <span className="mono">+</span> in the tab strip to bring this task's
+          artifacts back into the workspace.
         </p>
       </div>
     </div>
@@ -184,9 +184,10 @@ function WorkspaceEmpty() {
    menu instead. It opens things; the tab strip below navigates them. Locked
    entries stay listed, because knowing the diff exists and why it is not ready
    beats it silently missing. */
-function QuickOpen({ pg, taskId, onOpen }: {
+function QuickOpen({ pg, taskId, scenario, onOpen }: {
   pg: PlaygroundState
   taskId: string | null
+  scenario: Scenario | null
   onOpen: (tab: WorkspaceTab) => void
 }) {
   const [at, setAt] = useState<{ x: number; y: number } | null>(null)
@@ -194,7 +195,7 @@ function QuickOpen({ pg, taskId, onOpen }: {
   const root = useRef<HTMLDivElement>(null)
   useDismiss(open, root, useCallback(() => setAt(null), []))
 
-  const entries = openableTabs(pg, taskId)
+  const entries = openableTabs(pg, taskId, scenario)
 
   return (
     <div ref={root} className="relative shrink-0">

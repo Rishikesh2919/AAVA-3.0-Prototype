@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { Chip, Message as Msg } from '../../state/types'
+import type { Chip, Message as Msg, TabId } from '../../state/types'
 import { Message } from './Message'
 import { Chips } from './Chips'
 
@@ -11,10 +11,10 @@ interface Props {
   onAccept: (beat: string) => void
   onDismiss: (id: string) => void
   onOpenFile?: (file: string) => void
-  onOpenPreview?: () => void
+  onOpenTab?: (tab: TabId) => void
 }
 
-export function Thread({ messages, chips, preview, onChip, onAccept, onDismiss, onOpenFile, onOpenPreview }: Props) {
+export function Thread({ messages, chips, preview, onChip, onAccept, onDismiss, onOpenFile, onOpenTab }: Props) {
   const end = useRef<HTMLDivElement>(null)
   useEffect(() => {
     end.current?.scrollIntoView({
@@ -27,7 +27,7 @@ export function Thread({ messages, chips, preview, onChip, onAccept, onDismiss, 
     <div role="log" aria-live="polite" aria-label="Conversation" className="flex flex-col">
       {messages.map((m) => (
         <Message key={m.id} msg={m} preview={preview} onAccept={onAccept} onDismiss={onDismiss}
-          onOpenFile={onOpenFile} onOpenPreview={onOpenPreview} />
+          onOpenFile={onOpenFile} onOpenTab={onOpenTab} />
       ))}
       <Chips chips={chips} onPick={onChip} />
       <div ref={end} />

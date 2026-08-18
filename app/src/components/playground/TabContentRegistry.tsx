@@ -1,5 +1,5 @@
 import type { PlaygroundState, Scenario } from '../../state/types'
-import { parseTabId } from '../../state/workspace'
+import { hasPreview, parseTabId } from '../../state/workspace'
 import { Preview } from './Preview'
 import { previewTemplate } from './FeedbackApp'
 import { Code } from './Code'
@@ -40,7 +40,7 @@ export function TabContentRegistry({ tabId, scenario, pg, theme, onToast, onFile
        at a review gate has not run anything — the preview renderer would fall
        back to the first file and draw a form that does not exist. */
     case 'preview':
-      if (!scenario || !scenario.fileOrder.some((f) => f.endsWith('.html'))) return <EmptySurface />
+      if (!hasPreview(scenario)) return <EmptySurface />
       return (
         <Padded>
           <Preview template={previewTemplate(scenario, pg)} onToast={onToast} />

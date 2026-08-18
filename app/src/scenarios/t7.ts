@@ -63,6 +63,104 @@ const schemaJson = `{
   }
 }`
 
+const specTs = `import { toV2 } from './refund-mapper';
+import { validateAgainst } from '@acme/schema-registry';
+import { contractFor } from '@acme/pact';
+import { recordedV1, v1 } from './__fixtures__/refunds';
+
+/** Contract conformance for the v1 to v2 refund mapping (PAY-3120).
+ *  Run by the Validator agent — not by the agent that wrote the mapper. */
+describe('toV2', () => {
+  it('maps amount_cents to amount.minor', () => {
+    expect(toV2(v1({ amount_cents: 1250 })).amount.minor).toBe(1250);
+  });
+
+  it('carries currency onto the amount object', () => {
+    expect(toV2(v1({ currency: 'EUR' })).amount.currency).toBe('EUR');
+  });
+
+  it('maps reason_code to reason.code', () => {
+    expect(toV2(v1({ reason_code: 'duplicate' })).reason.code).toBe('duplicate');
+  });
+
+  it('moves reason_text into reason.memo', () => {
+    expect(toV2(v1({ reason_text: 'customer asked' })).reason.memo).toBe('customer asked');
+  });
+
+  // FAILS — v1 accepts any length, v2 caps the memo at 280 characters. 3 of the
+  // recorded refunds overflow it and nothing says what to do with the rest.
+  it('truncates a memo over 280 characters', () => {
+    expect(toV2(v1({ reason_text: 'x'.repeat(400) })).reason.memo).toHaveLength(280);
+  });
+
+  it('accepts a null memo', () => {
+    expect(toV2(v1({ reason_text: null })).reason.memo).toBeNull();
+  });
+
+  it('rejects a reason code outside the v2 enum', () => {
+    expect(() => toV2(v1({ reason_code: 'goodwill' }))).toThrow('reason.code');
+  });
+
+  it('maps refunded_at to settledAt', () => {
+    expect(toV2(v1({ refunded_at: '2026-07-02T09:15:00Z' })).settledAt)
+      .toBe('2026-07-02T09:15:00Z');
+  });
+
+  it('keeps settledAt in ISO 8601', () => {
+    expect(Date.parse(toV2(v1()).settledAt)).not.toBeNaN();
+  });
+
+  it('maps gateway_ref to processor.reference', () => {
+    expect(toV2(v1({ gateway_ref: 'ch_3P9' })).processor.reference).toBe('ch_3P9');
+  });
+
+  // FAILS — 214 recorded refunds carry no actor and v2 requires an initiator.
+  // 'system' is the mapper's guess, not a decision anyone has taken.
+  it('defaults initiatedBy to system when the actor is absent', () => {
+    expect(toV2(v1({ actor_id: null })).initiatedBy).toBe('system');
+  });
+
+  it('preserves initiatedBy when the actor is present', () => {
+    expect(toV2(v1({ actor_id: 'usr_88' })).initiatedBy).toBe('usr_88');
+  });
+
+  it('passes a v2 payload through untouched', () => {
+    const already = toV2(v1());
+    expect(toV2(already)).toEqual(already);
+  });
+
+  it('round-trips 1,200 recorded refunds', () => {
+    for (const rec of recordedV1) expect(() => toV2(rec)).not.toThrow();
+  });
+
+  it('validates every result against the v2 JSON Schema', () => {
+    for (const rec of recordedV1) {
+      expect(validateAgainst('refund/v2.json', toV2(rec)).ok).toBe(true);
+    }
+  });
+
+  it('satisfies the ledger-service contract', () => {
+    expect(contractFor('ledger-service').verify(toV2(v1()))).toBe(true);
+  });
+
+  it('satisfies the refund-worker contract', () => {
+    expect(contractFor('refund-worker').verify(toV2(v1()))).toBe(true);
+  });
+
+  it('satisfies the finance export contract', () => {
+    expect(contractFor('finance-export').verify(toV2(v1()))).toBe(true);
+  });
+
+  it('satisfies the merchant dashboard contract', () => {
+    expect(contractFor('merchant-dashboard').verify(toV2(v1()))).toBe(true);
+  });
+
+  it("leaves a partial refund's processor reference intact", () => {
+    const partial = v1({ amount_cents: 500, gateway_ref: 'ch_3P9/partial' });
+    expect(toV2(partial).processor.reference).toBe('ch_3P9/partial');
+  });
+});`
+
 export const t7: Scenario = {
   prep: [
     { key: 'jira',     label: 'Read Jira',                        result: 'PAY-3120',              detail: 'Ticket, the linked v2 RFC and the three target services pulled from the connected Jira project.' },
@@ -118,10 +216,13 @@ export const t7: Scenario = {
       text: 'One PR per service, all three linked back to PAY-3120.' } },
   },
 
-  fileOrder: ['refund-mapper.ts', 'refunds.service.ts', 'refund-v2.schema.json'],
+  /* The spec sits next to what it tests, and `tests.file` names it — the
+     Validation Agent results tab and the tree are pointing at the same file. */
+  fileOrder: ['refund-mapper.ts', 'refund-mapper.spec.ts', 'refunds.service.ts', 'refund-v2.schema.json'],
   fileRoot: 'src/payments/refunds',
   files: {
     'refund-mapper.ts': { versions: [mapperTs] },
+    'refund-mapper.spec.ts': { versions: [specTs] },
     'refunds.service.ts': { versions: [serviceTs] },
     'refund-v2.schema.json': { versions: [schemaJson] },
   },

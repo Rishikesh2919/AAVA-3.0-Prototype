@@ -1,4 +1,4 @@
-import type { BlockSpec } from '../../state/types'
+import type { BlockSpec, TabId } from '../../state/types'
 import { ToolSteps } from './ToolSteps'
 
 interface Props {
@@ -10,10 +10,10 @@ interface Props {
   onAccept: (beat: string) => void
   onDismiss: () => void
   onOpenFile?: (file: string) => void
-  onOpenPreview?: () => void
+  onOpenTab?: (tab: TabId) => void
 }
 
-export function Block({ block, live, preview, onAccept, onDismiss, onOpenFile, onOpenPreview }: Props) {
+export function Block({ block, live, preview, onAccept, onDismiss, onOpenFile, onOpenTab }: Props) {
   if (block.kind === 'tools') return <ToolSteps steps={block.steps} done={block.done} />
 
   /* A validator's finding, as a scoreboard rather than a sentence. The four
@@ -27,8 +27,16 @@ export function Block({ block, live, preview, onAccept, onDismiss, onOpenFile, o
       ['Failed', failed, failed ? 'var(--danger)' : 'var(--muted-deep)'],
       ['Warnings', warnings, warnings ? 'var(--warn)' : 'var(--muted-deep)'],
     ]
+    const open = () => onOpenTab?.('tests')
     return (
-      <div className="mt-3 overflow-hidden rounded-[var(--r-md)]"
+      /* The card is the way into the full results — the scoreboard is a summary
+         of a tab, so reading it and then hunting for that tab in the strip was a
+         stop on the way to the thing it summarises. A div, not a button: the
+         file link inside it is one already. */
+      <div role="button" tabIndex={0} onClick={open}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open() } }}
+        title="Open the Validation Agent results"
+        className="press mt-3 cursor-pointer overflow-hidden rounded-[var(--r-md)] transition-colors hover:border-[var(--glass-line)] hover:bg-[var(--wash-3)] focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)]"
         style={{ background: 'var(--glass)', border: '1px solid var(--glass-line)' }}>
         <div className="flex items-center gap-2.5 px-3.5 py-2.5"
           style={{ borderBottom: '1px solid var(--glass-line-soft)' }}>
@@ -36,7 +44,8 @@ export function Block({ block, live, preview, onAccept, onDismiss, onOpenFile, o
             style={{ background: 'var(--text)', color: 'var(--on-text)' }}>{block.agent}</span>
           <span className="text-[12.5px] font-medium">Validation results</span>
           {block.file && (
-            <button onClick={() => onOpenFile?.(block.file!)}
+            /* Its own destination — the spec source, not the results tab. */
+            <button onClick={(e) => { e.stopPropagation(); onOpenFile?.(block.file!) }}
               className="mono press ml-auto truncate text-[11.5px] underline underline-offset-[3px] hover:text-[var(--text)]"
               style={{ color: 'var(--done)' }}>{block.file}</button>
           )}
@@ -95,7 +104,7 @@ export function Block({ block, live, preview, onAccept, onDismiss, onOpenFile, o
             <span className="truncate text-[13px] font-semibold">{block.name}</span>
             <span className="mono truncate text-[11px]" style={{ color: 'var(--muted)' }}>{block.status}</span>
           </div>
-          <button onClick={onOpenPreview}
+          <button onClick={() => onOpenTab?.('preview')}
             className="press rounded-full px-3.5 py-1.5 text-[12px] font-medium hover:bg-[var(--wash-4)] hover:text-[var(--text-dim)]"
             style={{ background: 'var(--glass)', color: 'var(--muted)', minHeight: 'var(--hit)', border: '1px solid var(--glass-line-soft)' }}>
             Open

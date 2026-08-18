@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
-import type { Message as Msg } from '../../state/types'
+import type { Message as Msg, TabId } from '../../state/types'
 import { TypingDots } from './TypingDots'
 import { StreamedText } from './StreamedText'
 import { Block } from './Blocks'
@@ -12,10 +12,10 @@ interface Props {
   onAccept: (beat: string) => void
   onDismiss: (id: string) => void
   onOpenFile?: (file: string) => void
-  onOpenPreview?: () => void
+  onOpenTab?: (tab: TabId) => void
 }
 
-export function Message({ msg, preview, onAccept, onDismiss, onOpenFile, onOpenPreview }: Props) {
+export function Message({ msg, preview, onAccept, onDismiss, onOpenFile, onOpenTab }: Props) {
   if (msg.from === 'user') {
     return (
       <motion.div {...fadeUp(6)}
@@ -39,7 +39,7 @@ export function Message({ msg, preview, onAccept, onDismiss, onOpenFile, onOpenP
           {msg.block && (
             <Block block={msg.block} live={msg.live !== false} preview={preview}
               onAccept={onAccept} onDismiss={() => onDismiss(msg.id)} onOpenFile={onOpenFile}
-              onOpenPreview={onOpenPreview} />
+              onOpenTab={onOpenTab} />
           )}
         </>
       )}

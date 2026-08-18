@@ -274,12 +274,6 @@ export function useJourney() {
       dispatch({ type: 'SET_FILE', file })
       dispatch({ type: 'SET_TAB', tab: 'code' })
     },
-    /* Open on the generated-app card. The workspace may be folded away, so this
-       also brings the panel back — a button called Open must show something. */
-    openPreview: () => {
-      dispatch({ type: 'SET_PANEL_OPEN', open: true })
-      dispatch({ type: 'SET_TAB', tab: 'preview' })
-    },
     editFile: (file: string, text: string) => dispatch({ type: 'EDIT_FILE', file, text }),
     focusEvidence: (key: string) => dispatch({ type: 'FOCUS_EVIDENCE', key }),
     dismissBlock: (messageId: string) => dispatch({ type: 'DISMISS_BLOCK', messageId }),

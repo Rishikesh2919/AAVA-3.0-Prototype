@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { t7 } from './t7'
 import { getScenario, routeBeat } from './index'
-import { prepStart } from '../state/reducer'
+import { initialState, prepStart } from '../state/reducer'
+import { openableTabs } from '../state/workspace'
 import { acceptBeatAt } from '../state/useJourney'
 import type { Effect } from '../state/types'
 
@@ -136,10 +137,24 @@ describe('t7 scenario', () => {
     }
   })
 
-  /* No .html, so the preview tab falls back to the empty state by design —
-     TabContentRegistry keys off exactly this. */
-  it('ships no page to preview', () => {
-    expect(t7.fileOrder.some((f) => f.endsWith('.html'))).toBe(false)
+  /* No .html to render, so a preview tab here could only ever show the empty
+     state — it is not offered at all. T1, which ships a page, still gets it. */
+  it('offers no preview tab', () => {
+    const tabs = openableTabs(initialState.playground, 'T7', t7).map((e) => e.legacy)
+    expect(tabs).not.toContain('preview')
+    expect(tabs).toContain('tests')
+  })
+
+  /* The card's file link, the results tab header and the file tree all name
+     `tests.file` — it has to be a file the editor can actually open, and its
+     source has to hold the specs the tab lists. */
+  it('ships the spec file the validation card links to', () => {
+    const spec = t7.files[t7.tests.file!]
+    expect(spec, `no such file: ${t7.tests.file}`).toBeDefined()
+    expect(t7.fileOrder).toContain(t7.tests.file)
+    for (const title of t7.tests.specs) {
+      expect(spec.versions[0], `spec missing: ${title}`).toContain(title)
+    }
   })
 
   it('is registered under its task id', () => {

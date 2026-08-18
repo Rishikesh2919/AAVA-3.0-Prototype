@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import type { AppState, Chip } from '../../state/types'
+import type { AppState, Chip, TabId } from '../../state/types'
 import { Thread } from './Thread'
 import { ContextPane } from '../playground/ContextPane'
 import { IconFolder, IconRightPanel } from '../chrome/icons'
@@ -15,7 +15,7 @@ interface Props {
   onAccept: (beat: string) => void
   onDismiss: (id: string) => void
   onOpenFile?: (file: string) => void
-  onOpenPreview?: () => void
+  onOpenTab?: (tab: TabId) => void
   onToggleContext?: () => void
   onTogglePanel?: () => void
   composer: React.ReactNode
@@ -30,7 +30,7 @@ interface Props {
  * region of the shell now, so the twin had nothing left to do.
  */
 export function ConversationView({
-  state, chips, progress, preview, onChip, onAccept, onDismiss, onOpenFile, onOpenPreview, composer, onToggleContext, onTogglePanel,
+  state, chips, progress, preview, onChip, onAccept, onDismiss, onOpenFile, onOpenTab, composer, onToggleContext, onTogglePanel,
 }: Props) {
   const task = state.activeTaskId ? state.tasks.find((t) => t.id === state.activeTaskId) : null
   const contextOpen = state.playground.contextOpen
@@ -100,7 +100,7 @@ export function ConversationView({
           <div className="mx-auto w-full" style={colStyle}>
             <Thread messages={state.messages} chips={chips} preview={preview}
               onChip={onChip} onAccept={onAccept} onDismiss={onDismiss} onOpenFile={onOpenFile}
-              onOpenPreview={onOpenPreview} />
+              onOpenTab={onOpenTab} />
           </div>
         </div>
 

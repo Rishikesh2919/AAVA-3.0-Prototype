@@ -40,6 +40,18 @@ describe('reducer', () => {
     expect(s.playground.openRequest).toBe(before + 2)
   })
 
+  /* Same rule for progress steps: clicking a second step while evidence is
+     already the active tab has to reopen it after the user closed the tab. */
+  it('counts every evidence focus, repeats included', () => {
+    const before = initialState.playground.openRequest
+    let s = reducer(initialState, { type: 'FOCUS_EVIDENCE', key: 'step-1' })
+    expect(s.playground.openRequest).toBe(before + 1)
+    s = reducer(s, { type: 'FOCUS_EVIDENCE', key: 'step-2' })
+    expect(s.playground.activeTab).toBe('evidence')
+    expect(s.playground.focusedEvidence).toBe('step-2')
+    expect(s.playground.openRequest).toBe(before + 2)
+  })
+
   it('gives a task opened over a running one its own thread', () => {
     let s = reducer(initialState, { type: 'OPEN_TASK', taskId: 'T1', scenario: null })
     s = applyEffects(s, [{ type: 'say', lines: ['Analyzed the task.'] }])

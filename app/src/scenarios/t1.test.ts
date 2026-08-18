@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { t1 } from './t1'
 import { getScenario, routeBeat } from './index'
+import { hasPreview } from '../state/workspace'
 
 describe('t1 scenario', () => {
   it('has ten prep steps, each with a matching evidence block', () => {
@@ -8,6 +9,12 @@ describe('t1 scenario', () => {
     for (const step of t1.prep) {
       expect(t1.evidence[step.key], `evidence missing for ${step.key}`).toBeDefined()
     }
+  })
+
+  /* The other half of T7's "offers no preview tab" — T1 ships a page, so
+     removing the tab there would take the thing the run produced with it. */
+  it('keeps its preview', () => {
+    expect(hasPreview(t1)).toBe(true)
   })
 
   it('routes the demo phrases to the right beats', () => {

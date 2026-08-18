@@ -13,7 +13,11 @@ export function Code({ scenario, pg, theme, onFile, onEdit }: {
   onFile: (f: string) => void
   onEdit: (file: string, text: string) => void
 }) {
-  const active = pg.activeFile ?? scenario.fileOrder[0]
+  /* A file link can name something the scenario does not ship — a spec file the
+     Validator reports on, say. Fall back rather than index into undefined. */
+  const active = pg.activeFile && scenario.files[pg.activeFile]
+    ? pg.activeFile
+    : scenario.fileOrder[0]
   const version = pg.fileVersions[active] ?? 0
   /* `@@` marks the changed lines in the scripted version for the diff view;
      the editor shows the file itself, not the annotation. */

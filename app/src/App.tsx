@@ -172,7 +172,7 @@ export default function App() {
                     onAccept={j.runBeat}
                     onDismiss={j.dismissBlock}
                     onOpenFile={j.openFile}
-                    onOpenPreview={j.openPreview}
+                    onOpenTab={j.setTab}
                     onToggleContext={j.toggleContext}
                     onTogglePanel={j.togglePanel}
                     /* Only joined when there is a panel to join to — a chat
