@@ -58,9 +58,16 @@ export interface ToolStep {
 }
 
 export type BlockSpec =
-  | { kind: 'prep' }
   | { kind: 'coverage'; groups: CoverageGroup[] }
-  | { kind: 'confirm'; rows: ConfirmRow[]; acceptLabel: string; cancelLabel: string; acceptBeat: string }
+  /** What a validator agent found, as a scoreboard. `failing` names the checks
+      that did not pass — usually the reason the run stopped for a human. */
+  | { kind: 'validation'; agent: string; file?: string
+      counts: { tests: number; passed: number; failed: number; warnings: number }
+      failing?: string[] }
+  /** `step` and `title` turn a confirm into a named gate — "waiting on you,
+      step 4" — rather than an anonymous pair of buttons. */
+  | { kind: 'confirm'; rows: ConfirmRow[]; acceptLabel: string; cancelLabel: string; acceptBeat: string
+      step?: number; title?: string }
   /** `file` makes a link openable — it opens that source file in the workspace.
       Without one the link is a flat reference (a raised PR, say). */
   | { kind: 'links'; links: { label: string; file?: string }[] }
@@ -92,6 +99,8 @@ export type Effect =
   | { type: 'runState'; kind: RunKind; label: string }
   | { type: 'codeVersion'; file: string; version: number }
   | { type: 'chips'; stage: string }
+  /** Move the run to this prep step. Everything before it reads as done. */
+  | { type: 'prepAt'; index: number }
   | { type: 'wait'; ms: number }
 
 export interface PrepStep {
@@ -99,8 +108,13 @@ export interface PrepStep {
   label: string
   result: string
   detail: string
+  /** Not done yet. The FIRST pending step is where the run is parked — that is
+      what seeds `playground.prepAt`, and everything after it is simply ahead. */
   pending?: boolean
-  
+  /** Names the beat that asks for this step's decision. Set = this step is a
+      human gate: the run stops here, and that beat is replayed after every
+      answer until someone clears it. */
+  gate?: string
 }
 
 export interface EvidenceBlock {
@@ -166,7 +180,14 @@ export interface Scenario {
   /** Where the changed files live in the repo, for the editor's file tree.
       Slash-separated; each segment renders as a folder above the files. */
   fileRoot?: string
-  tests: { specs: string[]; coveragePct: number; gatePct: number }
+  /** `file` names the spec file the Tests tab reports on; `failing` lists the
+      specs in `specs` that do NOT pass, so the tab and the validation card in
+      the conversation can never tell different stories. */
+  tests: { specs: string[]; coveragePct: number; gatePct: number; file?: string
+    failing?: string[]
+    /** The prep step that fixes `failing`. Past it, the tab shows them green —
+        so the tab cannot still be red after the run says it fixed them. */
+    failUntil?: number }
   diff: DiffGroup[]
   beats: Record<string, Effect[]>
   router: { match: RegExp; beat: string }[]
@@ -185,6 +206,9 @@ export interface PlaygroundState {
    *  version for that file — the preview reads from here too. */
   edits: Record<string, string>
   activeFile: string | null
+  /** Which prep step the run is parked on. Steps before it are done, the step
+   *  itself is where the user is, everything after is ahead of the run. */
+  prepAt: number
   diffBadge: number | null
   /** Task-context pane. Collapsed by default so the default split is unchanged. */
   contextOpen: boolean

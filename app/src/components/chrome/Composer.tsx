@@ -10,10 +10,13 @@ interface Props {
   /** Wrapper classes, so each arrangement can align it to its own column. */
   className?: string
   placeholder?: string
+  /** Sits directly under the task-progress panel and shares its edge — no gap,
+      no second border, square across the join. */
+  joined?: boolean
 }
 
 export function Composer({
-  onSend, value, onChange, className = '',
+  onSend, value, onChange, className = '', joined = false,
   placeholder = 'Ask AAVA anything…',
 }: Props) {
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -27,14 +30,17 @@ export function Composer({
   }
 
   return (
-    <div className={`w-full pb-7 pt-2 ${className}`}>
+    <div className={`w-full ${joined ? '' : 'pb-7 pt-2'} ${className}`}>
       <form
         onSubmit={(e) => { e.preventDefault(); submit() }}
         className="rounded-[var(--r-lg)] px-4 pb-3 pt-3.5 backdrop-blur-[24px]"
         style={{
-          background: 'var(--glass-strong)',
-          border: '1px solid var(--glass-line)',
-          boxShadow: 'var(--shadow-composer)',
+          /* Joined, this is a card ON the progress surface: flat neutral against
+             its wash, curved on every corner, no outline of its own — the wrapper
+             already draws one around the pair. Free-standing, it stays glass. */
+          background: joined ? 'var(--slab)' : 'var(--glass-strong)',
+          border: joined ? 'none' : '1px solid var(--glass-line)',
+          boxShadow: joined ? 'none' : 'var(--shadow-composer)',
         }}
       >
         <label htmlFor="prompt" className="sr-only">Message AAVA</label>

@@ -8,7 +8,7 @@ import { WorkspaceShell } from './components/layout/WorkspaceShell'
 import { Composer } from './components/chrome/Composer'
 import { StartView } from './components/start/StartView'
 import { ConversationView } from './components/chat/ConversationView'
-import { PrepList } from './components/chat/PrepList'
+import { TaskProgress } from './components/chat/TaskProgress'
 import { TabWorkspace } from './components/playground/TabWorkspace'
 import { FeedbackApp, previewTemplate, readTemplate } from './components/playground/FeedbackApp'
 import { TasksView } from './components/tasks/TasksView'
@@ -31,8 +31,8 @@ export default function App() {
      changes — holding the text here makes that remount invisible. */
   const [draft, setDraft] = useState('')
 
-  const composerFor = () => (
-    <Composer onSend={j.send} value={draft} onChange={setDraft} />
+  const composerFor = (joined = false) => (
+    <Composer onSend={j.send} value={draft} onChange={setDraft} joined={joined} />
   )
 
   /* Escape unwinds one layer at a time, cheapest first. Closing the workspace
@@ -53,7 +53,9 @@ export default function App() {
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [j.state.overlay, j.state.arrangement, j.state.activeTaskId, j.state.playground.panelOpen])
 
-  const prep = j.scenario ? <PrepList steps={j.scenario.prep} onOpenEvidence={j.focusEvidence} /> : null
+  const progress = j.scenario
+    ? <TaskProgress steps={j.scenario.prep} at={j.state.playground.prepAt} onOpenEvidence={j.focusEvidence} />
+    : null
 
   /* The generated-app card shows the running app rather than a picture of it.
      Built here because this is where the scenario and the playground state meet;
@@ -164,7 +166,7 @@ export default function App() {
                     key="conversation"
                     state={j.state}
                     chips={chips}
-                    prep={prep}
+                    progress={progress}
                     preview={preview}
                     onChip={j.send}
                     onAccept={j.runBeat}
@@ -173,7 +175,9 @@ export default function App() {
                     onOpenPreview={j.openPreview}
                     onToggleContext={j.toggleContext}
                     onTogglePanel={j.togglePanel}
-                    composer={composerFor()}
+                    /* Only joined when there is a panel to join to — a chat
+                       thread with no task keeps the free-standing composer. */
+                    composer={composerFor(!!progress)}
                   />
                 )}
               </AnimatePresence>

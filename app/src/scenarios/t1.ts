@@ -48,7 +48,7 @@ export const t1: Scenario = {
     { key: 'inject', label: 'Injected the feedback form',  result: '7 files changed',        detail: 'Built the Angular page, wired it to the endpoint, registered the route.' },
     { key: 'tests',  label: 'Ran unit tests',              result: '11 passed · 87%',        detail: 'All specs pass. Coverage is above the 80% gate.' },
     { key: 'checks', label: 'Checks passed',               result: 'build · lint · contract', detail: 'Build clean, lint clean, response shape matches the contract. Three assumptions logged.' },
-    { key: 'ready',  label: 'Human-in-the-loop Review',    result: 'awaiting your review',   detail: 'It is running in the preview. Check it over, then ask me to raise the PRs.', pending: true },
+    { key: 'ready',  label: 'Human-in-the-loop Review',    result: 'awaiting your review',   detail: 'It is running in the preview. Check it over, then clear the gate and I will raise both PRs.', pending: true, gate: 'ship' },
   ],
 
   evidence: {
@@ -171,14 +171,6 @@ export const t1: Scenario = {
       { type: 'chips', stage: 'filed' },
     ],
 
-    steps: [
-      { type: 'say', lines: ['Here are the sequence of steps I followed to complete this task.'],
-        block: { kind: 'prep' } },
-      { type: 'wait', ms: 300 },
-      { type: 'say', lines: ['What would you like to do next?'] },
-      { type: 'chips', stage: 'stepped' },
-    ],
-
     // Kept for a later "show me the preview" — it never stopped running.
     run: [
       { type: 'showTab', tab: 'preview' },
@@ -226,18 +218,19 @@ export const t1: Scenario = {
     diff: [
       { type: 'showTab', tab: 'diff' },
       { type: 'say', lines: ['Two repos. The PLAY components are a separate PR from the product change.'] },
-      { type: 'chips', stage: 'diffed' },
     ],
 
     ship: [
-      { type: 'say', lines: ['Two PRs, two repos. Both linked to MOB-2841. Confirm and I will raise them.'],
-        block: { kind: 'confirm', acceptLabel: 'Raise both PRs', cancelLabel: 'Not yet', acceptBeat: 'shipped', rows: [
+      { type: 'say', stream: false, lines: [],
+        block: { kind: 'confirm', step: 10, title: 'Raise both pull requests',
+          acceptLabel: 'Raise both PRs', cancelLabel: 'Not yet', acceptBeat: 'shipped', rows: [
           { repo: 'PLAY', branch: 'feat/play-formfield-charactercounter → main', what: 'FormField, CharacterCounter' },
           { repo: 'Product', branch: 'feat/MOB-2841-feedback-form → develop', what: 'Feedback page, API integration, 11 specs passing' },
         ] } },
     ],
 
     shipped: [
+      { type: 'prepAt', index: 10 },
       { type: 'runState', kind: 'live', label: 'Raising PRs' },
       { type: 'tools', steps: [
         { label: 'Pushing feat/play-formfield-charactercounter', source: 'GitHub', result: 'PLAY',    ms: T.prCreate },
@@ -255,9 +248,8 @@ export const t1: Scenario = {
   },
 
   router: [
-    /* These two come first: "Show agentic process steps" contains "show", which
-       the preview rule below would otherwise swallow. */
-    { match: /(agentic|process steps|steps I took|sequence of steps)/i, beat: 'steps' },
+    /* Comes first: "review the code changes" contains "review", and the
+       coverage rule below would otherwise swallow it. */
     { match: /(review the code|code change|changed files|the files)/i, beat: 'files' },
     { match: /\b(pr|prs|raise|ship|merge|approve|push)\b/i, beat: 'ship' },
     { match: /\bdiff\b/i,                                   beat: 'diff' },
@@ -271,23 +263,13 @@ export const t1: Scenario = {
     ],
     // Each branch still offers the other, so neither is a dead end.
     filed: [
-      { label: 'Show agentic process steps', sends: 'Show agentic process steps' },
-      { label: 'Raise the PRs', sends: 'Raise the PRs' },
-    ],
-    stepped: [
-      { label: 'Review code changes', sends: 'Review the code changes' },
-      { label: 'Raise the PRs', sends: 'Raise the PRs' },
+      { label: 'Are there any open items?', sends: 'Are there any open items?' },
     ],
     running: [
       { label: 'Are there any open items?', sends: 'Are there any open items?' },
-      { label: 'Raise the PRs', sends: 'Raise the PRs' },
     ],
     reviewed: [
       { label: 'Show me the diff', sends: 'Show me the diff' },
-      { label: 'Raise the PRs', sends: 'Raise the PRs' },
-    ],
-    diffed: [
-      { label: 'Raise the PRs', sends: 'Raise the PRs' },
     ],
   },
 

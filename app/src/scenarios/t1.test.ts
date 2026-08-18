@@ -22,12 +22,12 @@ describe('t1 scenario', () => {
     expect(routeBeat(t1, 'Show me the diff')).toBe('diff')
   })
 
-  /* "Show agentic process steps" contains "show", which the preview rule matches —
-     so this is really a test of router ORDER, and it fails the day someone
-     appends the new rules to the bottom of the list. */
-  it('routes the two review paths without the preview rule stealing them', () => {
-    expect(routeBeat(t1, 'Show agentic process steps')).toBe('steps')
+  /* Really a test of router ORDER — the greedy preview rule matches "show" and
+     "run", so it has to stay last. Fails the day someone appends a rule to the
+     bottom of the list instead of placing it. */
+  it('routes the review paths without the preview rule stealing them', () => {
     expect(routeBeat(t1, 'Review the code changes')).toBe('files')
+    expect(routeBeat(t1, 'Show me the diff')).toBe('diff')
     expect(routeBeat(t1, 'run it')).toBe('run')
   })
 
@@ -52,6 +52,18 @@ describe('t1 scenario', () => {
   it('ships the form with Submit below the comment field', () => {
     const html = t1.files['feedback-form.component.html'].versions[0]
     expect(html.indexOf('play-button')).toBeGreaterThan(html.indexOf('play-character-counter'))
+  })
+
+  /* Raising a PR puts the work in front of other people, so it is a gate here
+     exactly as it is in t7 — the last step is the one that asks. */
+  it('gates the PRs on its final step, and shipping finishes the run', () => {
+    expect(t1.prep.flatMap((s, i) => (s.gate ? [i] : []))).toEqual([9])
+    expect(t1.prep[9].gate).toBe('ship')
+    const ask = t1.beats.ship.find((e) => e.type === 'say' && e.block?.kind === 'confirm')
+    if (ask?.type !== 'say' || ask.block?.kind !== 'confirm') throw new Error('ship asks nothing')
+    expect(ask.block.step).toBe(10)
+    expect(ask.block.acceptBeat).toBe('shipped')
+    expect(t1.beats.shipped.flatMap((e) => (e.type === 'prepAt' ? [e.index] : []))).toEqual([10])
   })
 
   it('is registered under its task id', () => {

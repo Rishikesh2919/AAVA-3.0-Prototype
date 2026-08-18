@@ -181,7 +181,7 @@ describe('reducer', () => {
     expect(items).toHaveLength(initialState.tasks.length)
     expect(items[0]).toMatchObject({ id: 'T1', tag: 'review', unread: true })
     // T5 and T6 are the finished ones, seeded as already read.
-    expect(items.filter((n) => n.unread).map((n) => n.id)).toEqual(['T1', 'T2', 'T3', 'T4'])
+    expect(items.filter((n) => n.unread).map((n) => n.id).sort()).toEqual(['T1', 'T2', 'T3', 'T4', 'T7'])
     expect(items.every((n) => n.title && n.body && n.when)).toBe(true)
   })
 })

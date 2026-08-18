@@ -8,7 +8,8 @@ import { prefersReducedMotion } from '../../state/timing'
 interface Props {
   state: AppState
   chips: Chip[]
-  prep: React.ReactNode
+  /** Where the run stands. Pinned above the composer, not a message. */
+  progress: React.ReactNode
   preview: React.ReactNode
   onChip: (sends: string) => void
   onAccept: (beat: string) => void
@@ -29,7 +30,7 @@ interface Props {
  * region of the shell now, so the twin had nothing left to do.
  */
 export function ConversationView({
-  state, chips, prep, preview, onChip, onAccept, onDismiss, onOpenFile, onOpenPreview, composer, onToggleContext, onTogglePanel,
+  state, chips, progress, preview, onChip, onAccept, onDismiss, onOpenFile, onOpenPreview, composer, onToggleContext, onTogglePanel,
 }: Props) {
   const task = state.activeTaskId ? state.tasks.find((t) => t.id === state.activeTaskId) : null
   const contextOpen = state.playground.contextOpen
@@ -97,7 +98,7 @@ export function ConversationView({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-8 pt-3">
           <div className="mx-auto w-full" style={colStyle}>
-            <Thread messages={state.messages} chips={chips} prep={prep} preview={preview}
+            <Thread messages={state.messages} chips={chips} preview={preview}
               onChip={onChip} onAccept={onAccept} onDismiss={onDismiss} onOpenFile={onOpenFile}
               onOpenPreview={onOpenPreview} />
           </div>
@@ -105,8 +106,20 @@ export function ConversationView({
 
         {/* px-8 outside the max-width, exactly as the thread above — with the
             padding inside it, the composer came out 64px narrower. */}
+        {/* Progress sits WITH the composer, not in the scroll. Where the run
+            stands is not something you should have to scroll back to find.
+            One tinted surface holds both; the composer is a card ON it, which
+            is what lets its corners stay curved all the way round. */}
         <div className="px-8">
-          <div className="mx-auto w-full" style={colStyle}>{composer}</div>
+          <div className="mx-auto w-full" style={colStyle}>
+            {progress ? (
+              <div className="mb-7 overflow-hidden rounded-[var(--r-lg)]"
+                style={{ background: 'var(--glass-strong)', border: '1px solid var(--glass-line)' }}>
+                {progress}
+                {composer}
+              </div>
+            ) : composer}
+          </div>
         </div>
       </div>
     </motion.div>

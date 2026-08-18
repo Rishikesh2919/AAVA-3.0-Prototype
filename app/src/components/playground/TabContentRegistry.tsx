@@ -36,8 +36,11 @@ export function TabContentRegistry({ tabId, scenario, pg, theme, onToast, onFile
         </Padded>
       )
 
+    /* Nothing to preview unless the scenario ships a page. A migration parked
+       at a review gate has not run anything — the preview renderer would fall
+       back to the first file and draw a form that does not exist. */
     case 'preview':
-      if (!scenario) return <EmptySurface />
+      if (!scenario || !scenario.fileOrder.some((f) => f.endsWith('.html'))) return <EmptySurface />
       return (
         <Padded>
           <Preview template={previewTemplate(scenario, pg)} onToast={onToast} />
@@ -45,7 +48,7 @@ export function TabContentRegistry({ tabId, scenario, pg, theme, onToast, onFile
       )
 
     case 'tests':
-      return scenario ? <Padded><Tests scenario={scenario} /></Padded> : <EmptySurface />
+      return scenario ? <Padded><Tests scenario={scenario} prepAt={pg.prepAt} /></Padded> : <EmptySurface />
 
     case 'diff':
       return scenario ? <Padded><Diff groups={scenario.diff} /></Padded> : <EmptySurface />

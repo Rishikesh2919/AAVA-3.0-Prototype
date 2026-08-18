@@ -4,9 +4,8 @@ import { ToolSteps } from './ToolSteps'
 interface Props {
   block: BlockSpec
   live: boolean
-  prep: React.ReactNode
-  /** The running app, for the `app` card's thumbnail. Injected the same way
-      `prep` is — the conversation never reaches into the playground itself. */
+  /** The running app, for the `app` card's thumbnail. Injected rather than
+      reached for — the conversation never touches the playground itself. */
   preview: React.ReactNode
   onAccept: (beat: string) => void
   onDismiss: () => void
@@ -14,10 +13,62 @@ interface Props {
   onOpenPreview?: () => void
 }
 
-export function Block({ block, live, prep, preview, onAccept, onDismiss, onOpenFile, onOpenPreview }: Props) {
-  if (block.kind === 'prep') return <>{prep}</>
-
+export function Block({ block, live, preview, onAccept, onDismiss, onOpenFile, onOpenPreview }: Props) {
   if (block.kind === 'tools') return <ToolSteps steps={block.steps} done={block.done} />
+
+  /* A validator's finding, as a scoreboard rather than a sentence. The four
+     numbers are the whole verdict; the failing checks are printed because they
+     are usually the reason the run stopped and asked for a human. */
+  if (block.kind === 'validation') {
+    const { tests, passed, failed, warnings } = block.counts
+    const stats: [string, number, string][] = [
+      ['Tests', tests, 'var(--text)'],
+      ['Passed', passed, 'var(--ok)'],
+      ['Failed', failed, failed ? 'var(--danger)' : 'var(--muted-deep)'],
+      ['Warnings', warnings, warnings ? 'var(--warn)' : 'var(--muted-deep)'],
+    ]
+    return (
+      <div className="mt-3 overflow-hidden rounded-[var(--r-md)]"
+        style={{ background: 'var(--glass)', border: '1px solid var(--glass-line)' }}>
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5"
+          style={{ borderBottom: '1px solid var(--glass-line-soft)' }}>
+          <span className="rounded-full px-2 py-[3px] text-[9.5px] font-semibold uppercase tracking-[.12em]"
+            style={{ background: 'var(--text)', color: 'var(--on-text)' }}>{block.agent}</span>
+          <span className="text-[12.5px] font-medium">Validation results</span>
+          {block.file && (
+            <button onClick={() => onOpenFile?.(block.file!)}
+              className="mono press ml-auto truncate text-[11.5px] underline underline-offset-[3px] hover:text-[var(--text)]"
+              style={{ color: 'var(--done)' }}>{block.file}</button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-4">
+          {stats.map(([label, n, tone], i) => (
+            <div key={label} className="grid justify-items-center gap-0.5 py-3"
+              style={{ borderLeft: i ? '1px solid var(--glass-line-soft)' : undefined }}>
+              <span className="mono text-[19px] font-semibold tabular-nums" style={{ color: tone }}>{n}</span>
+              <span className="text-[11px]" style={{ color: 'var(--muted)' }}>{label}</span>
+            </div>
+          ))}
+        </div>
+
+        {!!block.failing?.length && (
+          <div className="px-3.5 py-3" style={{ borderTop: '1px solid var(--glass-line-soft)' }}>
+            <h4 className="mb-1.5 text-[9.5px] font-semibold uppercase tracking-[.14em]"
+              style={{ color: 'var(--danger)' }}>Failing</h4>
+            <ul className="grid gap-1.5 text-[12.5px]" style={{ color: 'var(--text-dim)' }}>
+              {block.failing.map((f) => (
+                <li key={f} className="grid grid-cols-[12px_1fr] items-start gap-2">
+                  <span style={{ color: 'var(--danger)' }}>✕</span>
+                  <span className="text-pretty">{f}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   /* What was generated: the thing itself on top, named underneath, with the way
      in beside the name. The thumbnail is the running app rendered small and
@@ -105,7 +156,25 @@ export function Block({ block, live, prep, preview, onAccept, onDismiss, onOpenF
   // confirm
   return (
     <div className="mt-3 rounded-[var(--r-md)] p-3"
-      style={{ background: 'var(--glass)', border: '1px solid var(--glass-line)' }}>
+      style={{
+        background: 'var(--glass)',
+        /* A gate is not another card in the thread. While it is live it is the
+           only thing on screen that can move the run, and it is bordered to
+           say so; once answered it settles back to a plain record. */
+        border: `1px solid ${live && block.step ? 'var(--warn)' : 'var(--glass-line)'}`,
+      }}>
+      {block.step && (
+        <div className="mb-2.5">
+          <span className="flex items-center gap-1.5 text-[9.5px] font-semibold uppercase tracking-[.13em]"
+            style={{ color: live ? 'var(--warn)' : 'var(--muted-deep)' }}>
+            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
+              <circle cx="12" cy="8" r="3.4" /><path d="M4.5 20a7.5 7.5 0 0 1 15 0" strokeLinecap="round" />
+            </svg>
+            {live ? 'Waiting on you' : 'Answered'} · Step {block.step}
+          </span>
+          {block.title && <h4 className="mt-1.5 text-[13.5px] font-semibold">{block.title}</h4>}
+        </div>
+      )}
       {block.rows.map((r) => (
         <div key={r.repo} className="mb-2 grid gap-0.5">
           <span className="text-[12px] font-semibold">{r.repo}</span>

@@ -1,4 +1,11 @@
-import type { Action, Arrangement, AppState, Effect, PlaygroundState, Task, TaskTag, Thread, ThreadSnapshot } from './types'
+import type { Action, Arrangement, AppState, Effect, PlaygroundState, PrepStep, Task, TaskTag, Thread, ThreadSnapshot } from './types'
+
+/** Where a scenario's run stands when you open it: its first unfinished step,
+ *  or past the end when there is nothing left to do. */
+export const prepStart = (prep: PrepStep[]) => {
+  const i = prep.findIndex((s) => s.pending)
+  return i === -1 ? prep.length : i
+}
 
 export const TASKS: Task[] = [
   {
@@ -34,6 +41,45 @@ export const TASKS: Task[] = [
       ],
       run: { agent: 'Frontend Feature Agent', golden: true, certified: '2026-06-12', accepts: 47,
              branch: 'feat/MOB-2841-feedback-form', tokens: '184k', cost: '$1.42' },
+    },
+  },
+  {
+    id: 'T7', title: 'Migrate the refunds API to the v2 schema',
+    status: 'clarify', tag: 'input', est: '6 hrs', dep: 'Payments platform',
+    note: 'Validator passed. Parked at step 4 of 10 — your approval.', updated: '12 min ago',
+    opening: [
+      'The Validator agent has finished. Nothing has been applied to any service yet.',
+      'I am parked at step 4 — the mapping needs your approval before I touch the services.',
+    ],
+    context: {
+      ticket: 'PAY-3120', ticketSource: 'Jira · Sprint 34',
+      description:
+        'Migrate the refunds API from the v1 to the v2 refund schema across payments-api, ledger-service ' +
+        'and refund-worker. Two human gates: the field mapping before anything is applied, and a sign-off ' +
+        'before the canary reaches staging.',
+      criteria: [
+        { text: 'Every v1 refund field mapped to a v2 field or explicitly dropped', met: true },
+        { text: 'Validator agent passes contract conformance', met: true,
+          note: '18 checks passed. Two warnings logged for your review.' },
+        { text: 'All three consumers migrated with contract tests green', met: false,
+          note: 'Blocked on the step 4 approval — nothing is applied until you approve.' },
+        { text: 'Canary verified against live consumer traffic', met: false,
+          note: 'Behind the step 7 sign-off gate.' },
+      ],
+      capabilities: ['Schema mapping', 'Contract conformance validation', 'Consumer contract tests', 'Canary release'],
+      related: [
+        { id: 'PAY-3044', title: 'Refund v2 schema · RFC' },
+        { id: 'LED-881', title: 'Ledger refund reconciliation' },
+      ],
+      connected: [
+        { kind: 'file', label: 'src/payments/refunds/', source: 'Repo' },
+        { kind: 'api',  label: 'POST /api/v2/refunds', source: 'OpenAPI' },
+        { kind: 'api',  label: 'refund.settled · v2 event', source: 'Schema registry' },
+        { kind: 'git',  label: 'feat/PAY-3120-refund-v2', source: 'GitHub' },
+      ],
+      run: { agent: 'Payments Migration Agent', golden: true, certified: '2026-07-04', accepts: 18,
+             branch: 'feat/PAY-3120-refund-v2', tokens: '212k', cost: '$1.86',
+             halted: 'Parked at the step 4 review gate — nothing applies until you approve.' },
     },
   },
   {
@@ -209,6 +255,7 @@ const emptyPlayground: PlaygroundState = {
   fileVersions: {},
   edits: {},
   activeFile: null,
+  prepAt: 0,
   diffBadge: null,
   contextOpen: false,
   panelOpen: true,
@@ -269,6 +316,13 @@ export function applyEffect(state: AppState, effect: Effect): AppState {
     case 'wait':
       return state
 
+    /* The run moved. Steps behind it tick, the step itself becomes where you
+       are — one number, so the list can never disagree with itself.
+       Forward only: a beat replayed from further up the transcript must never
+       un-tick work that has already happened. */
+    case 'prepAt':
+      return { ...state, playground: { ...pg, prepAt: Math.max(pg.prepAt, effect.index) } }
+
     case 'say': {
       const trailing = state.messages.at(-1)
       const said = {
@@ -280,9 +334,16 @@ export function applyEffect(state: AppState, effect: Effect): AppState {
         live: true,
         stream: effect.stream !== false,
       }
-      const messages = trailing?.typing
-        ? [...state.messages.slice(0, -1), said]
-        : [...state.messages, said]
+      const base = trailing?.typing ? state.messages.slice(0, -1) : state.messages
+      /* One live decision at a time, and it is the newest one. A gate that
+         re-asks further down the thread must retire the copy above it —
+         otherwise a scrolled-up button re-runs work that already ran. */
+      const messages = [
+        ...(said.block?.kind === 'confirm'
+          ? base.map((m) => (m.block?.kind === 'confirm' ? { ...m, live: false } : m))
+          : base),
+        said,
+      ]
       return { ...state, messages }
     }
 
@@ -465,6 +526,7 @@ export function reducer(state: AppState, action: Action): AppState {
           ...emptyPlayground,
           taskId: task.id,
           activeFile: action.scenario?.fileOrder[0] ?? null,
+          prepAt: action.scenario ? prepStart(action.scenario.prep) : 0,
         },
       }
     }

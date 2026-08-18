@@ -8,7 +8,6 @@ import { fadeUp } from '../../design/motion'
 
 interface Props {
   msg: Msg
-  prep: React.ReactNode
   preview: React.ReactNode
   onAccept: (beat: string) => void
   onDismiss: (id: string) => void
@@ -16,7 +15,7 @@ interface Props {
   onOpenPreview?: () => void
 }
 
-export function Message({ msg, prep, preview, onAccept, onDismiss, onOpenFile, onOpenPreview }: Props) {
+export function Message({ msg, preview, onAccept, onDismiss, onOpenFile, onOpenPreview }: Props) {
   if (msg.from === 'user') {
     return (
       <motion.div {...fadeUp(6)}
@@ -38,7 +37,7 @@ export function Message({ msg, prep, preview, onAccept, onDismiss, onOpenFile, o
             ? <StreamingLines msg={msg} />
             : msg.lines.map((line, i) => <Line key={i}>{line}</Line>)}
           {msg.block && (
-            <Block block={msg.block} live={msg.live !== false} prep={prep} preview={preview}
+            <Block block={msg.block} live={msg.live !== false} preview={preview}
               onAccept={onAccept} onDismiss={() => onDismiss(msg.id)} onOpenFile={onOpenFile}
               onOpenPreview={onOpenPreview} />
           )}

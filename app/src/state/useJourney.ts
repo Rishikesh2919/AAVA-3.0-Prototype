@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { TASKS, initialState, reducer, threadIdForTask } from './reducer'
+import { TASKS, initialState, prepStart, reducer, threadIdForTask } from './reducer'
 import { getScenario, routeBeat } from '../scenarios'
 import { searchHits, taskNotifications } from '../data/chrome'
-import type { Effect, Overlay, TabId, Thread } from './types'
+import type { Effect, Overlay, Scenario, TabId, Thread } from './types'
 import { T, prefersReducedMotion, streamMs } from './timing'
 
 const REDUCED = prefersReducedMotion
@@ -14,6 +14,21 @@ const IN_SCOPE =
   /\b(task|ticket|jira|figma|design|frame|api|contract|endpoint|schema|code|file|test|spec|coverage|repo|branch|commit|pr|prs|merge|ship|raise|build|lint|component|library|play|form|feedback|submit|button|field|rating|comment|preview|diff|deploy|bug|error|fix|change|move|rerun|run|status|review|approve|assum|cover|blocked|open item|next step|you|your)\b/i
 
 const AGREES = /^(alright|all right|ok|okay|yes|yep|yeah|sure|please|go ahead|do it|start (a )?new thread)\b/i
+
+/* Clearing a gate by typing rather than clicking. Anchored on purpose: a gate's
+   own words turn up all over the reading branches — "approve the mapping" is a
+   step label — and a mid-sentence match would clear a gate the user was only
+   asking about. Which gate it clears is never written down here; the run is
+   parked on exactly one, and that one's accept beat is the answer. */
+const APPROVES = /^(approve|approved|approval|go ahead|do it|yes|yep|yeah|sure|sign.?off|proceed|confirm|ship it)\b/i
+
+/** The beat behind the accept button of the gate the run is parked on, if any. */
+export function acceptBeatAt(sc: Scenario, at: number): string | null {
+  const asks = sc.prep[at]?.gate ? sc.beats[sc.prep[at].gate!] : undefined
+  const confirm = asks?.find((e) => e.type === 'say' && e.block?.kind === 'confirm')
+  if (confirm?.type !== 'say' || confirm.block?.kind !== 'confirm') return null
+  return sc.beats[confirm.block.acceptBeat] ? confirm.block.acceptBeat : null
+}
 
 /* The parked question gets answered in the new thread, not deflected. Anything
    answerable from what the app actually has — the clock, right now — is answered
@@ -63,6 +78,30 @@ export function useJourney() {
     () => (state.activeTaskId ? getScenario(state.activeTaskId) : null),
     [state.activeTaskId],
   )
+
+  /* A pending decision outlives the answer you asked for.
+   *
+   * Reading around a gate — the validation results, the diff, what is still
+   * open — must not cost you the gate: USER_SAY clears the chips, and the
+   * confirm block that asked the question is now somewhere up the transcript.
+   * So the gate is replayed onto the end of whatever was just said, which puts
+   * the decision AND its chips back at the bottom where the user is looking.
+   *
+   * Which gate is not the beat's business — `prepAt` already knows. A beat that
+   * moves the run (an approval) is read at its destination, so clearing gate 4
+   * presents gate 7 without either beat naming the other. */
+  const withGate = useCallback((sc: Scenario | null, beats: Effect[], from?: number) => {
+    if (!sc) return beats
+    const moved = beats.filter((e) => e.type === 'prepAt').at(-1)
+    /* `from` is for the caller that runs BEFORE its own dispatch lands: opening
+       a task still reads the outgoing thread's playground. The scenario comes in
+       as an argument for the same reason — `state.activeTaskId` is a tick behind. */
+    const at = moved?.type === 'prepAt' ? moved.index : from ?? state.playground.prepAt
+    const gate = sc.prep[at]?.gate
+    const asks = gate ? sc.beats[gate] : undefined
+    // The gate replaying itself would append itself forever.
+    return !asks || asks === beats ? beats : [...beats, ...asks]
+  }, [state.playground.prepAt])
 
   /* Plays a beat on a real clock.
    *
@@ -117,8 +156,8 @@ export function useJourney() {
   const runBeat = useCallback((name: string) => {
     const sc = state.activeTaskId ? getScenario(state.activeTaskId) : null
     const beat = sc?.beats[name]
-    if (beat) play(beat)
-  }, [state.activeTaskId, play])
+    if (beat) play(withGate(sc, beat))
+  }, [state.activeTaskId, play, withGate])
 
   const send = useCallback((text: string) => {
     const pending = state.pendingTopic
@@ -135,8 +174,14 @@ export function useJourney() {
     const sc = state.activeTaskId ? getScenario(state.activeTaskId) : null
 
     if (sc) {
+      /* Yes, at the gate the run is actually parked on. The router is stateless
+         and cannot tell step 4's approval from step 7's — this can, so the
+         approval words stay out of the router entirely. */
+      const accept = acceptBeatAt(sc, state.playground.prepAt)
+      if (accept && APPROVES.test(text.trim())) { play(withGate(sc, sc.beats[accept])); return }
+
       const beat = routeBeat(sc, text)
-      if (beat && sc.beats[beat]) { play(sc.beats[beat]); return }
+      if (beat && sc.beats[beat]) { play(withGate(sc, sc.beats[beat])); return }
       // Nothing in the message belongs to this task's world. Say so and offer
       // the split rather than answering out of context inside a task thread.
       if (!IN_SCOPE.test(text)) {
@@ -147,12 +192,12 @@ export function useJourney() {
         ] }])
         return
       }
-      play([{ type: 'say', lines: sc.fallback }])
+      play(withGate(sc, [{ type: 'say', lines: sc.fallback }]))
       return
     }
 
     play([{ type: 'say', lines: replyOffTask(text) }])
-  }, [state.activeTaskId, state.pendingTopic, play, cancel])
+  }, [state.activeTaskId, state.pendingTopic, state.playground.prepAt, play, cancel, withGate])
 
   const toast = useCallback((text: string | null) => {
     dispatch({ type: 'TOAST', text })
@@ -180,12 +225,12 @@ export function useJourney() {
     }
     const sc = getScenario(taskId)
     dispatch({ type: 'OPEN_TASK', taskId, scenario: sc })
-    if (sc) { play(sc.beats.prep); return }
+    if (sc) { play(withGate(sc, sc.beats.prep, prepStart(sc.prep))); return }
     // No scripted beats for this task, but the product must never say so —
     // AAVA speaks to where the work actually stands, from the task's own copy.
     const task = TASKS.find((t) => t.id === taskId)
     if (task) play([{ type: 'say', lines: task.opening }])
-  }, [state.activeThreadId, state.stashed, play, cancel])
+  }, [state.activeThreadId, state.stashed, play, cancel, withGate])
 
   /* One way into a thread, whatever the sidebar shows it as. A parked thread
      comes back whole; a task thread that was never parked (a seeded one, or one
