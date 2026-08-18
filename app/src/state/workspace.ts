@@ -65,7 +65,7 @@ export function workspaceTabFor(tab: TabId, taskId: string | null): WorkspaceTab
 
 /* A preview needs a page to render. A backend migration parked at a review gate
    has none — so the tab is not locked for it, it does not exist for it. */
-export function hasPreview(scenario: Scenario | null | undefined): boolean {
+export function hasPreview(scenario: Scenario | null | undefined): scenario is Scenario {
   return !!scenario?.fileOrder.some((f) => f.endsWith('.html'))
 }
 
