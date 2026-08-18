@@ -65,6 +65,23 @@ export function ConversationView({
               {task.title}
             </h2>
 
+            {/* The ticket is where the task came from — one click back to it. */}
+            <a
+              href={task.context.ticketUrl ?? `https://aava-demo.atlassian.net/browse/${task.context.ticket}`}
+              target="_blank"
+              rel="noreferrer"
+              title={`Open ${task.context.ticket} in ${task.context.ticketSource.split(' · ')[0]}`}
+              /* Colours live in classes, not style — an inline background would
+                 outrank the hover rule and nothing would light up. */
+              className="press ml-2 flex shrink-0 items-center gap-1.5 rounded-[7px] border border-[var(--glass-line-soft)] bg-[var(--wash-2)] px-2 py-[3px] text-[var(--muted)] transition-colors hover:border-[var(--glass-line)] hover:bg-[var(--wash-4)] hover:text-[var(--text-dim)]"
+            >
+              <span className="mono text-[11px]">{task.context.ticket}</span>
+              <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M14 4h6v6M20 4l-8 8M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+              </svg>
+            </a>
+
             {/* Right edge, for the region it controls. Collapsing the workspace
                 from inside it leaves no way back in — this is that way back. */}
             <EdgeToggle

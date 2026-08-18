@@ -131,6 +131,8 @@ export interface Chip { label: string; sends: string }
 export interface TaskContext {
   ticket: string
   ticketSource: string
+  /** Tracker deep link. Omitted means the sample Jira browse URL is used. */
+  ticketUrl?: string
   description: string
   /** `note` explains an unmet criterion — why, not just that. */
   criteria: { text: string; met: boolean; note?: string }[]
