@@ -193,15 +193,15 @@ export function Block({ block, live, preview, onAccept, onDismiss, onOpenFile, o
       ))}
       {live && (
         <div className="mt-3 flex gap-2">
-          <button onClick={() => { onDismiss(); onAccept(block.acceptBeat) }}
-            className="press rounded-full px-3.5 py-2 text-[12px] font-medium"
-            style={{ background: 'linear-gradient(140deg, var(--aurora-1), var(--aurora-2))', color: '#fff', minHeight: 'var(--hit)' }}>
-            {block.acceptLabel}
-          </button>
           <button onClick={onDismiss}
             className="press rounded-full px-3.5 py-2 text-[12px] hover:bg-[var(--wash-4)] hover:text-[var(--text-dim)]"
             style={{ background: 'var(--glass)', color: 'var(--muted)', minHeight: 'var(--hit)', border: '1px solid var(--glass-line-soft)' }}>
             {block.cancelLabel}
+          </button>
+          <button onClick={() => { onDismiss(); onAccept(block.acceptBeat) }}
+            className="press rounded-full px-3.5 py-2 text-[12px] font-medium"
+            style={{ background: 'var(--primary-grad)', color: '#fff', minHeight: 'var(--hit)' }}>
+            {block.acceptLabel}
           </button>
         </div>
       )}

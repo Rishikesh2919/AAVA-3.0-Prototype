@@ -62,7 +62,7 @@ export function Composer({
           <button
             type="submit" disabled={!value.trim()} aria-label="Send message"
             className="press hit grid place-items-center rounded-full disabled:opacity-35 disabled:active:transform-none"
-            style={{ background: 'var(--send-grad)', color: '#fff' }}
+            style={{ background: 'var(--primary-grad)', color: '#fff' }}
           >
             <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
               <path d="M12 19V5.5M12 5.5 6 11.5M12 5.5l6 6" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />

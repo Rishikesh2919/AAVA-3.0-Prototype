@@ -74,9 +74,9 @@
   --shadow-composer: 0 12px 40px rgba(0, 0, 0, .5);
   --shadow-drawer: -24px 0 60px rgba(0, 0, 0, .5);
 
-  /* Send button. Aurora is sanctioned here, but the pastel end of it cannot
-     carry white text on a white page — light mode deepens the same hues. */
-  --send-grad: linear-gradient(140deg, var(--aurora-1), var(--aurora-2));
+  /* Primary buttons (send, gate accept). Brand teal→blue, dark enough to
+     carry white text on both grounds, so it does not fork by theme. */
+  --primary-grad: linear-gradient(264deg, #1B9CAD 4.19%, #287FD0 99.25%);
 
   /* Ambient field lobe opacities. */
   --lobe-1: .13;
@@ -180,8 +180,6 @@
   --wash-6: rgba(17, 24, 39, .18);
 
   --scrim: rgba(17, 24, 39, .32);
-
-  --send-grad: linear-gradient(140deg, #C026D3, #4F46E5);
 
   /* Barely there on white — enough to stop the canvas being flat, not enough
      to read as a wash of colour. */
