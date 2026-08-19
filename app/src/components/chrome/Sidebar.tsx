@@ -37,7 +37,9 @@ interface Props {
   onNewChat: () => void
   onMyTasks: () => void
   onSearch: () => void
-  onToggle: () => void
+  /* Absent in hover-drawer mode: a collapse control for a panel that already
+     hides itself is a button that does nothing. */
+  onToggle?: () => void
   onOpenThread: (thread: Thread) => void
   onOpenTask: (taskId: string) => void
   onTogglePin: (threadId: string) => void
@@ -502,6 +504,7 @@ export function Sidebar({
 
 
 
+            {onToggle && (
             <button
               onClick={onToggle}
               aria-label="Collapse sidebar"
@@ -512,10 +515,11 @@ export function Sidebar({
             >
               <IconPanel size={16} />
             </button>
+            )}
           </div>
 
           <div className="grid gap-1.5">
-            {!open && (
+            {!open && onToggle && (
               <NavRow label="Expand sidebar" open={open} onClick={onToggle}>
                 <IconPanel />
               </NavRow>

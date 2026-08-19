@@ -90,12 +90,16 @@ export default function App() {
       <div className="relative z-10 h-full">
         <WorkspaceShell
           sidebarOpen={j.state.sidebarOpen}
+          autoHideSidebar={inTask}
           rightOpen={j.state.playground.panelOpen}
           onSidebarOpenChange={j.setSidebarOpen}
           onRightOpenChange={j.setPanelOpen}
           sidebar={
             <Sidebar
-              open={j.state.sidebarOpen}
+              /* The hover drawer is always the full nav — a rail inside a
+                 drawer would be a collapse control for a panel that is already
+                 hiding itself. */
+              open={inTask || j.state.sidebarOpen}
               threads={j.state.threads}
               tasks={j.state.tasks}
               pinnedIds={j.state.pinnedThreadIds}
@@ -107,7 +111,7 @@ export default function App() {
               onNewChat={j.goHome}
               onMyTasks={j.showTasks}
               onSearch={() => j.setOverlay('search')}
-              onToggle={() => j.setSidebarOpen(!j.state.sidebarOpen)}
+              onToggle={inTask ? undefined : () => j.setSidebarOpen(!j.state.sidebarOpen)}
               onTogglePin={j.togglePinThread}
               onOpenThread={j.openThread}
               onOpenTask={j.openTask}

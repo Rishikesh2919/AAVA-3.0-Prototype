@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Group, Panel, Separator, useGroupRef, usePanelRef } from 'react-resizable-panels'
 import { panelSetKey, type PanelLayout } from '../../state/workspace'
 
@@ -29,6 +29,10 @@ interface Props {
   right?: ReactNode
   sidebarOpen: boolean
   rightOpen: boolean
+  /* Inside a task the nav gives up its column entirely and becomes a hover
+     drawer: the work is the screen, and a rail sitting next to it is 70px of
+     permanent furniture for something you touch once a session. */
+  autoHideSidebar?: boolean
   onSidebarOpenChange: (open: boolean) => void
   onRightOpenChange: (open: boolean) => void
 }
@@ -41,12 +45,17 @@ export function WorkspaceShell({
   rightOpen,
   onSidebarOpenChange,
   onRightOpenChange,
+  autoHideSidebar = false,
 }: Props) {
   const groupRef = useGroupRef()
   const sidebarRef = usePanelRef()
   const rightRef = usePanelRef()
 
-  const layoutKey = panelSetKey(right ? ['sidebar', 'main', 'right'] : ['sidebar', 'main'])
+  const layoutKey = panelSetKey([
+    ...(autoHideSidebar ? [] : ['sidebar']),
+    'main',
+    ...(right ? ['right'] : []),
+  ])
   const prevKey = useRef(layoutKey)
 
   /* Every geometry this session has seen, kept in a ref rather than state: a
@@ -130,6 +139,11 @@ export function WorkspaceShell({
     else if (!sidebarOpen && !panel.isCollapsed()) command(true, () => panel.collapse())
   }, [sidebarOpen, sidebarRef])
 
+  /* Hover intent for the drawer. Held here rather than in journey state: it is
+     pointer position, not a decision — it must not survive anything. */
+  const [peek, setPeek] = useState(false)
+  useEffect(() => { if (!autoHideSidebar) setPeek(false) }, [autoHideSidebar])
+
   useEffect(() => {
     const panel = rightRef.current
     if (!panel) return
@@ -138,6 +152,7 @@ export function WorkspaceShell({
   }, [rightOpen, rightRef])
 
   return (
+    <div className="relative h-full w-full">
     <Group
       groupRef={groupRef}
       orientation="horizontal"
@@ -153,6 +168,8 @@ export function WorkspaceShell({
          needs the bigger one; a mouse would feel it as a sloppy edge. */
       resizeTargetMinimumSize={{ coarse: 20, fine: 9 }}
     >
+      {!autoHideSidebar && (
+      <>
       <Panel
         id="sidebar"
         panelRef={sidebarRef}
@@ -190,6 +207,8 @@ export function WorkspaceShell({
       </Panel>
 
       <ShellSeparator label="Resize sidebar" />
+      </>
+      )}
 
       <Panel id="main" minSize="380px" className="flex min-w-0 flex-col">
         {main}
@@ -217,6 +236,36 @@ export function WorkspaceShell({
         </>
       )}
     </Group>
+
+      {/* The drawer. A 10px strip at the very edge is the handle — wide enough
+          to hit by throwing the pointer left, narrow enough that nothing in the
+          conversation is shadowed by it. Focus opens it too, or the nav would be
+          keyboard-unreachable the moment a task is open. */}
+      {autoHideSidebar && (
+        <>
+          <div
+            className="absolute inset-y-0 left-0 z-40 w-[10px]"
+            onMouseEnter={() => setPeek(true)}
+          />
+          <div
+            onMouseEnter={() => setPeek(true)}
+            onMouseLeave={() => setPeek(false)}
+            onFocusCapture={() => setPeek(true)}
+            onBlurCapture={() => setPeek(false)}
+            className="absolute inset-y-0 left-0 z-50 flex w-[var(--sidebar-w)] transition-transform duration-[var(--dur)] ease-[var(--ease)]"
+            style={{
+              background: 'var(--slab)',
+              transform: peek ? 'none' : 'translateX(-100%)',
+              boxShadow: peek ? 'var(--shadow-panel)' : 'none',
+            }}
+            /* Hidden means hidden: off-screen chrome must not be tabbable. */
+            inert={peek ? undefined : true}
+          >
+            {sidebar}
+          </div>
+        </>
+      )}
+    </div>
   )
 }
 
